@@ -1073,7 +1073,7 @@
 
 
             newItem.innerHTML = `
-                <input type="number" placeholder="Điểm" class="can-cu-diem" value="">
+                <input type="text" placeholder="Điểm" class="can-cu-diem" value="">
                 <input type="number" placeholder="Khoản" class="can-cu-khoan" value="">
                 <input type="number" placeholder="Điều" class="can-cu-dieu" value="">
                 <div style="display: flex; flex-direction: column;">
@@ -1162,7 +1162,7 @@
                  const newItem = document.createElement('div');
                  newItem.className = 'can-cu-item';
                  newItem.innerHTML = `
-                     <input type="number" placeholder="Điểm" class="can-cu-diem" value="${item.diem || ''}">
+                     <input type="text" placeholder="Điểm" class="can-cu-diem" value="${item.diem || ''}">
                      <input type="number" placeholder="Khoản" class="can-cu-khoan" value="${item.khoan || ''}">
                      <input type="number" placeholder="Điều" class="can-cu-dieu" value="${item.dieu || ''}">
                      <div style="display: flex; flex-direction: column;">
