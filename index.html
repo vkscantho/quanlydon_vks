@@ -1148,8 +1148,7 @@
             if (don) {
                 // Kiểm tra quyền chỉnh sửa
                 if (canEditDelete(don)) {
-                     // Lãnh đạo cấp KV và Cán bộ cấp KV chỉ được sửa đơn của đơn vị mình.
-                     // Lãnh đạo cấp TP và Admin được sửa tất cả.
+                     // Nếu có quyền, mở modal sửa
                      populateEditModal(don);
                 } else {
                      alert('Bạn không có quyền chỉnh sửa đơn này.');
@@ -1181,40 +1180,21 @@
         }
         
         /**
-         * HÀM MỚI: Kiểm tra quyền chỉnh sửa/xóa đơn
+         * CHỈNH SỬA: Hàm kiểm tra quyền chỉnh sửa/xóa đơn
          * Chỉ cho phép sửa/xóa nếu:
-         * 1. Là Admin/Manager_TP (Thấy và sửa tất cả)
-         * 2. Là Manager_KV/User_TP/User_KV và đơn đó được tạo ra bởi một người cùng đơn vị (createdByUnit == currentUser.unit)
-         * - Cụ thể: User_TP/User_KV chỉ nên sửa đơn của chính mình (đã lọc ở dưới)
-         * - Manager_KV có thể sửa đơn của cán bộ trong đơn vị mình.
+         * 1. Là Admin (admin/super_admin).
+         * 2. Là người tạo/cập nhật cuối cùng của đơn đó.
          */
         function canEditDelete(don) {
              if (!currentUser) return false;
              
-             // 1. Admin/Manager_TP có quyền tuyệt đối
-             if (currentUser.role === 'admin' || currentUser.role === 'manager_TP') {
+             // 1. Admin/Super_admin có quyền tuyệt đối
+             if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
                  return true;
              }
              
-             // 2. Các vai trò còn lại
-             const isDonFromCurrentUserUnit = don.createdByUnit === currentUser.unit;
-             
-             if (!isDonFromCurrentUserUnit) {
-                 return false;
-             }
-             
-             // 3. Nếu đơn thuộc cùng đơn vị:
-             // - User_TP/User_KV chỉ được sửa đơn của chính mình (kiểm tra username)
-             if (currentUser.role.startsWith('user_')) {
-                 return don.lastUpdatedBy === currentUser.username;
-             }
-             
-             // - Manager_KV được sửa đơn của bất kỳ ai trong đơn vị mình
-             if (currentUser.role === 'manager_KV') {
-                 return true;
-             }
-             
-             return false;
+             // 2. Các tài khoản khác chỉ được sửa đơn của chính mình đã tạo/cập nhật gần nhất
+             return don.lastUpdatedBy === currentUser.username;
         }
         
         function capNhatThamQuyenMacDinh(prefix = '') {
