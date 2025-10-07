@@ -188,9 +188,14 @@
         
         .can-cu-item {
             display: grid;
+            /* ĐIỀU CHỈNH LẠI CẤU TRÚC LƯỚI CHO CĂN CỨ: 3 CỘT INPUT + 1 CỘT SELECT + 1 CỘT BUTTON */
             grid-template-columns: 1fr 1fr 1fr 2fr auto;
             gap: 10px;
             margin-bottom: 5px;
+        }
+
+        .can-cu-item .can-cu-van-ban-input {
+             display: none; /* Mặc định ẩn input tự điền */
         }
 
         table {
@@ -490,8 +495,8 @@
                     <button onclick="exportList()">Xuất Danh sách đơn</button>
                     <button onclick="exportReport()">Xuất báo cáo</button>
                     <button onclick="downloadJSON()">Sao lưu JSON</button>
-                    <button class="export-btn" onclick="downloadProposalDoc(currentSelectedId)">Xuất Phiếu Đề Xuất</button>
-                    <button class="export-btn" onclick="downloadResultExtractionDoc(currentSelectedId)">Xuất Kết quả xử lý đơn</button>
+                    <button class="export-btn" onclick="downloadProposalDoc(currentSelectedId)">Xuất Phiếu Đề Xuất (Mẫu 07)</button>
+                    <button class="export-btn" onclick="downloadResultExtractionDoc(currentSelectedId)">Xuất Trích Xuất Kết Quả</button>
                 </div>
                 <div class="search-bar" style="margin-bottom: 20px;">
                     <input type="text" id="search-text" placeholder="Tìm kiếm theo Họ tên/Cơ quan/Tổ chức..." style="padding: 8px; width: 40%; border: 1px solid #ccc; border-radius: 4px;">
@@ -504,7 +509,7 @@
                         <tr>
                             <th>STT</th>
                             <th>Ngày nhận đơn</th>
-                            <th>Họ tên/Cơ quan/Tổ chức</th>
+                            <th>Họ tên /CQ/ TC</th>
                             <th>Nội dung đơn</th>
                             <th>Phân loại</th>
                             <th>Thẩm quyền</th>
@@ -723,7 +728,16 @@
             'Đơn vị': [
                 'TT-KT', 'VKSND KV1', 'VKSND KV2', 'VKSND KV3', 'VKSND KV4', 'VKSND KV5', 'VKSND KV6', 
                 'VKSND KV7', 'VKSND KV8', 'VKSND KV9', 'VKSND KV10', 'VKSND KV11', 'VKSND KV12', 'VKSND KV13', 'VKSND KV14'
-            ]
+            ],
+            // THÊM DANH SÁCH VĂN BẢN
+            'Văn bản Căn cứ': [
+                'Quy chế số: 222/QĐ-VKSTC ngày 22/6/2023 của VKSNDTC',
+                'Bộ Luật Tố tụng Hình sự',
+                'Bộ Luật Tố tụng Dân sự',
+                'Bộ luật Tố tụng Hành chính',
+                'Luật THADS'
+            ],
+            'Tùy chọn Văn bản': 'Tự điền vào văn bản' // Giá trị đặc biệt cho tùy chọn tự điền
         };
 
         // --- AUTHENTICATION FUNCTIONS ---
@@ -1013,18 +1027,108 @@
              populateUnitSelect('new-unit');
         }
         
+        /**
+         * Xử lý hiển thị/ẩn input Văn bản khi người dùng chọn Tự điền
+         */
+        function handleCanCuVanBanChange(selectElement) {
+            const container = selectElement.closest('.can-cu-item');
+            const inputElement = container.querySelector('.can-cu-van-ban-input');
+            const placeholder = container.querySelector('.can-cu-van-ban-placeholder');
+
+            if (selectElement.value === lookupData['Tùy chọn Văn bản']) {
+                 inputElement.style.display = 'block';
+                 inputElement.value = ''; // Xóa giá trị cũ khi chuyển sang tự điền
+                 selectElement.style.display = 'none'; // Ẩn select
+                 placeholder.style.display = 'none'; // Ẩn placeholder
+            } else {
+                 inputElement.style.display = 'none';
+                 selectElement.style.display = 'block'; // Hiển thị select
+                 placeholder.style.display = 'none'; // Ẩn placeholder
+            }
+        }
+        
+        /**
+         * Tạo dropdown cho Văn bản Căn cứ
+         */
+        function createVanBanSelect(selectedValue) {
+             const select = document.createElement('select');
+             select.className = 'can-cu-van-ban-select';
+             select.onchange = function() { handleCanCuVanBanChange(this); };
+
+             // Thêm tùy chọn cố định
+             lookupData['Văn bản Căn cứ'].forEach(value => {
+                 const option = document.createElement('option');
+                 option.value = value;
+                 option.textContent = value;
+                 select.appendChild(option);
+             });
+             
+             // Thêm tùy chọn Tự điền
+             const customOption = document.createElement('option');
+             customOption.value = lookupData['Tùy chọn Văn bản'];
+             customOption.textContent = lookupData['Tùy chọn Văn bản'];
+             select.appendChild(customOption);
+             
+             // Thiết lập giá trị mặc định/giá trị đã lưu
+             if (selectedValue) {
+                 if (lookupData['Văn bản Căn cứ'].includes(selectedValue)) {
+                     select.value = selectedValue;
+                 } else {
+                     // Nếu giá trị đã lưu là giá trị tự điền, chọn Tùy chọn Văn bản
+                     select.value = lookupData['Tùy chọn Văn bản'];
+                 }
+             }
+
+             return select;
+        }
+
         // Thêm/Xóa căn cứ
         function addCanCu(prefix = '') {
             const container = document.getElementById(prefix + 'can_cu_container');
             const newItem = document.createElement('div');
             newItem.className = 'can-cu-item';
-            newItem.innerHTML = `
-                <input type="number" placeholder="Điểm" class="can-cu-diem" value="">
-                <input type="number" placeholder="Khoản" class="can-cu-khoan" value="">
-                <input type="number" placeholder="Điều" class="can-cu-dieu" value="">
-                <input type="text" placeholder="Tên Văn bản/Quy chế" class="can-cu-van-ban" value="">
-                <button onclick="this.parentNode.remove()">Xóa</button>
-            `;
+            
+            // Khởi tạo các phần tử
+            const diemInput = document.createElement('input');
+            diemInput.type = 'number';
+            diemInput.placeholder = 'Điểm';
+            diemInput.className = 'can-cu-diem';
+            
+            const khoanInput = document.createElement('input');
+            khoanInput.type = 'number';
+            khoanInput.placeholder = 'Khoản';
+            khoanInput.className = 'can-cu-khoan';
+            
+            const dieuInput = document.createElement('input');
+            dieuInput.type = 'number';
+            dieuInput.placeholder = 'Điều';
+            dieuInput.className = 'can-cu-dieu';
+            
+            const vanBanWrapper = document.createElement('div');
+            vanBanWrapper.style.position = 'relative';
+            
+            const vanBanSelect = createVanBanSelect();
+            
+            const vanBanInput = document.createElement('input');
+            vanBanInput.type = 'text';
+            vanBanInput.placeholder = 'Nhập tên Văn bản/Quy chế';
+            vanBanInput.className = 'can-cu-van-ban-input'; // Thêm class để ẩn/hiện
+            vanBanInput.style.display = 'none'; // Mặc định ẩn
+            
+            // Thêm các phần tử vào newItem
+            newItem.appendChild(diemInput);
+            newItem.appendChild(khoanInput);
+            newItem.appendChild(dieuInput);
+            
+            vanBanWrapper.appendChild(vanBanSelect);
+            vanBanWrapper.appendChild(vanBanInput);
+            newItem.appendChild(vanBanWrapper);
+            
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Xóa';
+            deleteButton.onclick = function() { this.parentNode.remove(); };
+            newItem.appendChild(deleteButton);
+            
             container.appendChild(newItem);
         }
         
@@ -1036,7 +1140,17 @@
                 const diem = item.querySelector('.can-cu-diem').value.trim();
                 const khoan = item.querySelector('.can-cu-khoan').value.trim();
                 const dieu = item.querySelector('.can-cu-dieu').value.trim();
-                const van_ban = item.querySelector('.can-cu-van-ban').value.trim();
+                
+                let van_ban = '';
+                const selectElement = item.querySelector('.can-cu-van-ban-select');
+                const inputElement = item.querySelector('.can-cu-van-ban-input');
+
+                // Lấy giá trị từ Select hoặc Input tùy theo trạng thái
+                if (selectElement.value === lookupData['Tùy chọn Văn bản']) {
+                    van_ban = inputElement.value.trim();
+                } else {
+                    van_ban = selectElement.value;
+                }
                 
                 if (diem || khoan || dieu || van_ban) {
                      canCuList.push({ diem, khoan, dieu, van_ban });
@@ -1058,14 +1172,65 @@
              canCuList.forEach(item => {
                  const newItem = document.createElement('div');
                  newItem.className = 'can-cu-item';
-                 newItem.innerHTML = `
-                     <input type="number" placeholder="Điểm" class="can-cu-diem" value="${item.diem || ''}">
-                     <input type="number" placeholder="Khoản" class="can-cu-khoan" value="${item.khoan || ''}">
-                     <input type="number" placeholder="Điều" class="can-cu-dieu" value="${item.dieu || ''}">
-                     <input type="text" placeholder="Tên Văn bản/Quy chế" class="can-cu-van-ban" value="${item.van_ban || ''}">
-                     <button onclick="this.parentNode.remove()">Xóa</button>
-                 `;
+
+                 const diemInput = document.createElement('input');
+                 diemInput.type = 'number';
+                 diemInput.placeholder = 'Điểm';
+                 diemInput.className = 'can-cu-diem';
+                 diemInput.value = item.diem || '';
+                 
+                 const khoanInput = document.createElement('input');
+                 khoanInput.type = 'number';
+                 khoanInput.placeholder = 'Khoản';
+                 khoanInput.className = 'can-cu-khoan';
+                 khoanInput.value = item.khoan || '';
+                 
+                 const dieuInput = document.createElement('input');
+                 dieuInput.type = 'number';
+                 dieuInput.placeholder = 'Điều';
+                 dieuInput.className = 'can-cu-dieu';
+                 dieuInput.value = item.dieu || '';
+
+                 const vanBanWrapper = document.createElement('div');
+                 vanBanWrapper.style.position = 'relative';
+
+                 const vanBanSelect = createVanBanSelect(item.van_ban);
+                 
+                 const vanBanInput = document.createElement('input');
+                 vanBanInput.type = 'text';
+                 vanBanInput.placeholder = 'Nhập tên Văn bản/Quy chế';
+                 vanBanInput.className = 'can-cu-van-ban-input';
+                 vanBanInput.value = item.van_ban || '';
+
+                 // Logic hiển thị/ẩn dựa trên giá trị đã lưu
+                 const isCustomValue = !lookupData['Văn bản Căn cứ'].includes(item.van_ban || '') && (item.van_ban || '').trim() !== '';
+                 
+                 if (isCustomValue) {
+                     vanBanSelect.value = lookupData['Tùy chọn Văn bản'];
+                     vanBanInput.style.display = 'block';
+                 } else {
+                     vanBanInput.style.display = 'none';
+                 }
+                 
+                 vanBanWrapper.appendChild(vanBanSelect);
+                 vanBanWrapper.appendChild(vanBanInput);
+
+                 const deleteButton = document.createElement('button');
+                 deleteButton.textContent = 'Xóa';
+                 deleteButton.onclick = function() { this.parentNode.remove(); };
+
+                 newItem.appendChild(diemInput);
+                 newItem.appendChild(khoanInput);
+                 newItem.appendChild(dieuInput);
+                 newItem.appendChild(vanBanWrapper);
+                 newItem.appendChild(deleteButton);
+                 
                  container.appendChild(newItem);
+             });
+             
+             // Sau khi tải xong, gọi lại handleCanCuVanBanChange để đảm bảo trạng thái hiển thị đúng
+             container.querySelectorAll('.can-cu-item .can-cu-van-ban-select').forEach(select => {
+                  handleCanCuVanBanChange(select);
              });
         }
         
