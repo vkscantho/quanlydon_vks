@@ -186,28 +186,12 @@
             min-height: 80px;
         }
         
-        /* NEW CAN CU STYLING */
-        .can-cu-row {
-            margin-bottom: 10px; 
-            padding: 5px;
-            border: 1px dashed #ccc;
-            border-radius: 5px;
-        }
         .can-cu-item {
             display: grid;
-            grid-template-columns: 0.5fr 0.5fr 1fr 2fr auto; /* Diem, Khoan, Dieu, Van Ban, Button */
+            grid-template-columns: 1fr 1fr 1fr 2fr auto;
             gap: 10px;
+            margin-bottom: 5px;
         }
-        .can-cu-sub-item {
-            display: none; 
-            grid-column: 1 / -1; 
-            margin-top: 5px;
-        }
-        .can-cu-sub-item.form-group {
-            display: flex; 
-            flex-direction: column;
-        }
-        /* END NEW CAN CU STYLING */
 
         table {
             width: 100%;
@@ -301,7 +285,11 @@
             margin-top: 20px;
             display: flex;
             gap: 10px;
-            justify-content: flex-end;
+            justify-content: flex-start; /* CHỈNH LẠI THÀNH FLEX-START ĐỂ NÚT EXPORT Ở BÊN TRÁI */
+        }
+        
+        .btn-container.modal-footer {
+            justify-content: flex-end; /* GIỮ NGUYÊN CHO PHẦN FOOTER MODAL */
         }
         
         .delete-btn {
@@ -329,12 +317,12 @@
             background-color: #2e7d32 !important;
         }
         
-        .export-proposal-btn {
-            background-color: #3f51b5 !important;
+        .export-btn { /* ĐỔI TỪ export-proposal-btn sang export-btn và CHỈNH SỬA MÀU SẮC */
+            background-color: #5670e6 !important;
         }
         
-        .export-proposal-btn:hover {
-            background-color: #303f9f !important;
+        .export-btn:hover {
+            background-color: #435bce !important;
         }
         
       
@@ -498,18 +486,19 @@
 
             <div class="main-panel">
                 <h2>Danh sách theo dõi đơn</h2>
-                <div class="btn-container" style="justify-content: flex-start; margin-bottom: 20px;">
+                <div class="btn-container" style="margin-bottom: 20px;">
                     <button onclick="exportList()">Xuất Danh sách đơn</button>
                     <button onclick="exportReport()">Xuất báo cáo</button>
                     <button onclick="downloadJSON()">Sao lưu JSON</button>
-                    <button class="export-btn proposal-print-btn" onclick="showProposalModal(currentSelectedId)">Trích xuất Đề xuất/Xử lý (Đơn đã chọn)</button> 
+                    <button class="export-btn" onclick="downloadProposalDoc(currentSelectedId)">Xuất Phiếu Đề Xuất (Mẫu 07)</button>
+                    <button class="export-btn" onclick="downloadResultExtractionDoc(currentSelectedId)">Xuất Trích Xuất Kết Quả</button>
                 </div>
-            <div class="search-bar" style="margin-bottom: 20px;">
-                <input type="text" id="search-text" placeholder="Tìm kiếm theo Họ tên/Cơ quan/Tổ chức..." style="padding: 8px; width: 40%; border: 1px solid #ccc; border-radius: 4px;">
-                <input type="date" id="search-date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                <button class="search-btn" onclick="filterTable()">Tìm Kiếm</button>
-                <button class="reset-btn" onclick="resetFilter()">Xóa Bộ Lọc</button>
-            </div>
+                <div class="search-bar" style="margin-bottom: 20px;">
+                    <input type="text" id="search-text" placeholder="Tìm kiếm theo Họ tên/Cơ quan/Tổ chức..." style="padding: 8px; width: 40%; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="date" id="search-date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <button class="search-btn" onclick="filterTable()">Tìm Kiếm</button>
+                    <button class="reset-btn" onclick="resetFilter()">Xóa Bộ Lọc</button>
+                </div>
                 <table>
                     <thead>
                         <tr>
@@ -524,7 +513,7 @@
                         </tr>
                     </thead>
                     <tbody id="don-body">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -663,7 +652,7 @@
                 <textarea id="sua-ket_qua"></textarea>
             </div>
             <input type="hidden" id="edit-id-modal"> 
-            <div class="btn-container">
+            <div class="btn-container modal-footer">
                 <button onclick="updateDon()">Cập nhật</button>
             </div>
         </div>
@@ -685,25 +674,12 @@
                 <label for="confirm-password-change">Xác nhận mật khẩu mới:</label>
                 <input type="password" id="confirm-password-change">
             </div>
-            <div class="btn-container">
+            <div class="btn-container modal-footer">
                 <button onclick="changePassword()">Xác nhận</button>
             </div>
         </div>
     </div>
     
-     <div id="proposalModal" class="modal">
-        <div class="modal-content large-modal">
-            <span class="close-btn" onclick="document.getElementById('proposalModal').style.display='none'">&times;</span>
-            <h3>Xem trước Đề xuất/Xử lý đơn</h3>
-            <div style="border: 1px solid #ccc; padding: 15px; background-color: #f9f9f9; max-height: 70vh; overflow-y: auto;">
-                <pre id="proposal-content"></pre>
-            </div>
-            <div class="btn-container">
-                <button class="export-proposal-btn" onclick="downloadResolutionResultDoc(currentSelectedId)">Xuất File Word (.doc)</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         // --- 1. FIREBASE CONFIGURATION & INITIALIZATION (PHẢI THAY THẾ) ---
         // THAY THẾ CHỖ NÀY BẰNG CẤU HÌNH CỦA BẠN
@@ -716,6 +692,7 @@
             messagingSenderId: "209768483000",
             appId: "1:209768483000:web:1eb449ad41840e23334c4d"
         };
+
         // Khởi tạo Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
@@ -723,43 +700,34 @@
         // --- GLOBAL DATA & INITIALIZATION ---
         let accounts = {}; // Dữ liệu tài khoản (tải từ Firebase)
         let dons = []; // Dữ liệu đơn (tải từ Firebase dưới dạng mảng để dễ xử lý)
-        let currentUser = null; 
+        let currentUser = null;
         let currentSelectedId = null; // Thêm biến theo dõi đơn đang chọn để dùng cho export
 
         // Dữ liệu danh mục
         const lookupData = {
             'Nguồn đơn': [
-               'Bưu điện', 'Tiếp công dân', 'Các cơ quan Đảng, Nhà nước', 'UBND TPCT',
-                'Cục Điều tra, VKSTC', 'V11, VKSTC', 'V12, VKSTC', 'Các Sở, Ban, Ngành', 'Thành ủy'
+                'Bưu điện', 'Tiếp công dân', 'Các cơ quan Đảng, Nhà nước', 'UBND TPCT', 
+                'Cục Điều tra, VKSTC', 'V11, VKSTC', 'V12, VKSTC', 'Các Sở, Ban, Ngành', 
+                'Thành ủy'
             ],
             'Chuyển đến': [
-                'Lưu đơn', 'Trả đơn', 'Thông báo chỉ dẫn',
-                'THADS TP.CT', 'THADS KV1','THADS KV2','THADS KV3','THADS KV4','THADS KV5','THADS KV6','THADS KV7',
+                'Lưu đơn', 'Trả đơn', 'Thông báo chỉ dẫn', 'THADS TP.CT', 'THADS KV1','THADS KV2','THADS KV3','THADS KV4','THADS KV5','THADS KV6','THADS KV7', 
                 'THADS KV8','THADS KV9','THADS KV10','THADS KV11','THADS KV12','THADS KV13','THADS KV14',
                 'TAND TP.CT', 'TAND KV1', 'TAND KV2','TAND KV3','TAND KV4','TAND KV5','TAND KV6','TAND KV7',
                 'TAND KV8','TAND KV9','TAND KV10','TAND KV11','TAND KV12','TAND KV13','TAND KV14',
                 'CQCSĐT TP.CT', 'Công an phường', 
-                'VKSND KV1',  'VKSND KV2', 'VKSND KV3', 'VKSND KV4', 'VKSND KV5', 'VKSND KV6', 'VKSND KV7',
+                'VKSND KV1', 'VKSND KV2', 'VKSND KV3', 'VKSND KV4', 'VKSND KV5', 'VKSND KV6', 'VKSND KV7', 
                 'VKSND KV8', 'VKSND KV9', 'VKSND KV10', 'VKSND KV11', 'VKSND KV12', 'VKSND KV13', 'VKSND KV14',
                 'Phòng 1', 'Phòng 2', 'Phòng 7', 'Phòng 8', 'Phòng 9', 'Phòng 10', 'Phòng 11', 'Phòng 15'
             ],
             'Đơn vị': [
-                'Thành phố', 'VKSND KV1',  'VKSND KV2', 'VKSND KV3', 'VKSND KV4', 'VKSND KV5', 'VKSND KV6', 'VKSND KV7',
-                'VKSND KV8', 'VKSND KV9', 'VKSND KV10', 'VKSND KV11', 'VKSND KV12', 'VKSND KV13', 'VKSND KV14'
+                'TT-KT', 'VKSND KV1', 'VKSND KV2', 'VKSND KV3', 'VKSND KV4', 'VKSND KV5', 'VKSND KV6', 
+                'VKSND KV7', 'VKSND KV8', 'VKSND KV9', 'VKSND KV10', 'VKSND KV11', 'VKSND KV12', 'VKSND KV13', 'VKSND KV14'
             ]
         };
-        
-        // DANH SÁCH VĂN BẢN (Căn cứ) MỚI
-        const vanBanList = [
-            'Quy chế số: 222/QĐ-VKSTC ngày 22/6/2023 của VKSNDTC',
-            'Bộ Luật Tố tụng Hình sự',
-            'Bộ Luật Tố tụng dân sự',
-            'Bộ luật Tố tụng hành chính',
-            'Luật THADS',
-            'Tự điền vào văn bản' // Tùy chọn cuối cùng
-        ];
-        
+
         // --- AUTHENTICATION FUNCTIONS ---
+
         function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -768,11 +736,16 @@
                 .then(snapshot => {
                     const accounts = snapshot.val() || {};
                     if (accounts[username] && accounts[username].password === password) {
-                        currentUser = { username: username, role: accounts[username].role, unit: accounts[username].unit };
+                        currentUser = {
+                            username: username,
+                            role: accounts[username].role,
+                            unit: accounts[username].unit
+                        };
                         document.getElementById('login-container').style.display = 'none';
                         document.getElementById('main-container').style.display = 'flex';
                         document.getElementById('can_bo_phan_cong').value = currentUser.username;
                         
+                        // Hiển thị/ẩn nút quản lý tài khoản
                         if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
                             document.getElementById('account-btn').style.display = 'block';
                         } else {
@@ -788,14 +761,15 @@
                     alert('Lỗi khi đăng nhập: ' + error.message);
                 });
         }
+
         function logout() {
             currentUser = null;
             document.getElementById('login-container').style.display = 'flex';
             document.getElementById('main-container').style.display = 'none';
             document.getElementById('account-btn').style.display = 'none';
-            currentSelectedId = null;
+            currentSelectedId = null; // Reset ID đơn đang chọn
         }
-        
+
         function showChangePassModal() {
             if (!currentUser) {
                 alert('Vui lòng đăng nhập trước.');
@@ -813,10 +787,9 @@
             const confirmPass = document.getElementById('confirm-password-change').value;
 
             if (!currentUser) return alert('Vui lòng đăng nhập trước.');
-            
+
             database.ref('accounts/' + currentUser.username).once('value').then(snap => {
                 const currentAccount = snap.val();
-                
                 if (!currentAccount) return alert('Lỗi: Không tìm thấy thông tin tài khoản.');
 
                 if (oldPass === currentAccount.password) {
@@ -829,7 +802,7 @@
                             .then(() => {
                                 alert('Mật khẩu đã được thay đổi thành công!');
                                 document.getElementById('changePassModal').style.display = 'none';
-                                accounts[currentUser.username].password = newPass; 
+                                accounts[currentUser.username].password = newPass;
                             }).catch(error => {
                                 alert('Lỗi khi đổi mật khẩu: ' + error.message);
                             });
@@ -849,378 +822,251 @@
              if (!username) return;
 
              database.ref('accounts/' + username).once('value')
-                .then(snapshot => {
-                    if (snapshot.exists()) {
+                 .then(snapshot => {
+                     if (snapshot.exists()) {
                          if (confirm('Hệ thống sẽ đặt lại mật khẩu của bạn về "123". Vui lòng đăng nhập và đổi lại mật khẩu.')) {
-                            database.ref('accounts/' + username + '/password').set('123')
-                                .then(() => {
+                             database.ref('accounts/' + username + '/password').set('123')
+                                 .then(() => {
                                      alert('Đã đặt lại mật khẩu thành công!');
-                                }).catch(error => {
+                                 }).catch(error => {
                                      alert('Lỗi khi đặt lại mật khẩu: ' + error.message);
-                                });
-                        }
-                    } else {
-                        alert('Tên đăng nhập không tồn tại.');
-                    }
-                })
-                .catch(error => {
+                                 });
+                         }
+                     } else {
+                         alert('Tên đăng nhập không tồn tại.');
+                     }
+                 })
+                 .catch(error => {
                      alert('Lỗi khi kiểm tra tài khoản: ' + error.message);
-                });
-        }
-        
+                 });
+         }
+
         function initializeDefaultAccounts() {
             database.ref('accounts').once('value').then(snapshot => {
                 if (!snapshot.exists()) {
                     const defaultAccounts = {
-                        "adminct": { "password": "123", "role": "admin", "unit": "Thành phố" },
-                        "quanlyTP": { "password": "123", "role": "manager_TP", "unit": "Thành phố" },
-                        "userTP": { "password": "123", "role": "user_TP", "unit": "Thành phố" }
+                        "adminct": { "password": "123", "role": "admin", "unit": "TT-KT" },
+                        "lanhdaotk": { "password": "123", "role": "manager_TP", "unit": "TT-KT" },
+                        "canbotk": { "password": "123", "role": "user_TP", "unit": "TT-KT" }
                     };
                     database.ref('accounts').set(defaultAccounts)
+                        .then(() => console.log("Tạo tài khoản mặc định thành công."))
                         .catch(error => console.error("Lỗi khi tạo tài khoản mặc định:", error));
                 }
-            });
-            
-            database.ref('accounts').on('value', snap => {
-                accounts = snap.val() || {};
+                accounts = snapshot.val() || {};
             });
         }
 
         // --- ACCOUNT MANAGEMENT FUNCTIONS ---
+
         function showAccountsModal() {
-            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')) {
-                document.getElementById('accountsModal').style.display = 'flex';
-                renderAccounts();
-            } else {
-                alert('Bạn không có quyền quản lý tài khoản.');
-            }
-        }
-        
-        function createAccount() {
-            const username = document.getElementById('new-username').value;
-            const password = document.getElementById('new-password').value;
-            const role = document.getElementById('new-role').value;
-            const unit = document.getElementById('new-unit').value;
-
-            if (!username || !password || !role || !unit) {
-                alert('Vui lòng nhập đầy đủ thông tin.');
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'super_admin')) {
+                alert('Bạn không có quyền truy cập chức năng này.');
                 return;
             }
-             if (password.length < 3) {
-                alert('Mật khẩu phải có ít nhất 3 ký tự.');
-                return;
-            }
-            if (accounts[username]) {
-                alert('Tên đăng nhập đã tồn tại.');
-                return;
-            }
-
-            const newAccount = {
-                password: password,
-                role: role,
-                unit: unit
-            };
-
-            database.ref('accounts/' + username).set(newAccount)
-                .then(() => {
-                    alert('Tài khoản đã được tạo thành công!');
-                    document.getElementById('new-username').value = '';
-                    document.getElementById('new-password').value = '';
-                    document.getElementById('new-role').value = 'user_TP';
-                    capNhatDonViTheoVaiTro(); 
-                })
-                .catch(error => {
-                    alert('Lỗi khi tạo tài khoản: ' + error.message);
-                });
+            populateUnitSelect('new-unit');
+            loadAccounts();
+            document.getElementById('accountsModal').style.display = 'flex';
         }
         
-        function renderAccounts() {
-            const list = document.getElementById('account-list');
-            list.innerHTML = '';
-
-            for (const username in accounts) {
-                const account = accounts[username];
-                if (username === currentUser.username) continue;
-
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div>
-                        <strong>${username}</strong> (${account.role} - ${account.unit})
-                    </div>
-                    <div>
-                        <button class="reset-btn" onclick="resetPasswordForAccount('${username}')">Reset Mật khẩu</button>
-                        <button class="delete-btn" onclick="deleteAccount('${username}')">Xóa</button>
-                    </div>
-                `;
-                list.appendChild(li);
-            }
-        }
-        
-        // Function to reset password for a sub-account
-        function resetPasswordForAccount(username) {
-            if (!currentUser || currentUser.role !== 'admin') {
-                alert('Bạn không có quyền thực hiện chức năng này.');
-                return;
-            }
-            if (confirm(`Bạn có chắc chắn muốn đặt lại mật khẩu tài khoản ${username} về "123"?`)) {
-                 database.ref('accounts/' + username + '/password').set('123')
-                    .then(() => {
-                        alert(`Đã đặt lại mật khẩu cho tài khoản ${username} về "123" thành công!`);
-                        // Cập nhật lại biến accounts cục bộ
-                        if (accounts[username]) {
-                             accounts[username].password = '123';
-                        }
-                    }).catch(error => {
-                        alert('Lỗi khi đặt lại mật khẩu: ' + error.message);
-                    });
-            }
-        }
-
-        function deleteAccount(username) {
-            if (confirm(`Bạn có chắc chắn muốn xóa tài khoản ${username}?`)) {
-                database.ref('accounts/' + username).remove()
-                    .then(() => {
-                        alert('Tài khoản đã được xóa thành công.');
-                    })
-                    .catch(error => {
-                        alert('Lỗi khi xóa tài khoản: ' + error.message);
-                    });
-            }
-        }
-        
-        function capNhatDonViTheoVaiTro() {
-            const roleSelect = document.getElementById('new-role');
-            const unitSelect = document.getElementById('new-unit');
-            const role = roleSelect.value;
-            
-            unitSelect.innerHTML = '';
-            unitSelect.disabled = false;
-            
-            // Lấy danh sách Đơn vị từ lookupData, bỏ 'Thành phố' nếu là cấp Khu vực
-            let units = [...lookupData['Đơn vị']];
-            if (role.endsWith('_KV')) {
-                units = units.filter(u => u !== 'Thành phố');
-            } else if (role.endsWith('_TP') || role === 'admin' || role === 'super_admin') {
-                 units = units.filter(u => u === 'Thành phố');
-            }
-            
-            units.forEach(unit => {
+        function populateUnitSelect(selectId) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="Chọn">--Chọn Đơn vị--</option>';
+            lookupData['Đơn vị'].forEach(unit => {
                 const option = document.createElement('option');
                 option.value = unit;
                 option.textContent = unit;
-                unitSelect.appendChild(option);
+                select.appendChild(option);
             });
         }
 
-        // --- FORM & DATA FUNCTIONS ---
-        function clearForm() {
-            document.getElementById('ngay_nhan').value = new Date().toISOString().slice(0, 10);
-            document.getElementById('nguon_don').value = '';
-            document.getElementById('ho_ten').value = '';
-            document.getElementById('dia_chi').value = '';
-            document.getElementById('ngay_ghi').value = '';
-            document.getElementById('phan_loai').value = 'Khiếu nại';
-            document.getElementById('tham_quyen').value = 'Thuộc thẩm quyền giải quyết';
-            document.getElementById('can_bo_phan_cong').value = currentUser ? currentUser.username : '';
-            document.getElementById('chuc_danh').value = 'Kiểm sát viên trung cấp';
-            document.getElementById('chuyen_den').value = '';
-            document.getElementById('ngay_chuyen_don').value = '';
-            document.getElementById('noi_dung').value = '';
-            document.getElementById('de_xuat').value = '';
-            document.getElementById('ket_qua').value = '';
-            document.getElementById('edit-id').value = '';
-            document.getElementById('can_cu_container').innerHTML = '';
-            addCanCu();
-            currentSelectedId = null; // Clear selected ID
+        function loadAccounts() {
+            database.ref('accounts').once('value')
+                .then(snapshot => {
+                    accounts = snapshot.val() || {};
+                    const accountList = document.getElementById('account-list');
+                    accountList.innerHTML = '';
+                    for (const [username, account] of Object.entries(accounts)) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>${username} (${account.unit} - ${account.role})</span>
+                            <div>
+                                <button class="reset-btn" onclick="resetPassword('${username}')">Reset Mật khẩu</button>
+                                <button class="delete-btn" onclick="deleteAccount('${username}')">Xóa</button>
+                            </div>
+                        `;
+                        accountList.appendChild(li);
+                    }
+                });
         }
 
-        function saveDon() {
-            if (!currentUser) {
-                alert('Vui lòng đăng nhập để lưu đơn.');
-                return;
+        function createAccount() {
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const role = document.getElementById('new-role').value;
+            const unit = document.getElementById('new-unit').value;
+
+            if (!username || !password || unit === 'Chọn') {
+                return alert('Vui lòng nhập đủ Tên đăng nhập, Mật khẩu và chọn Đơn vị.');
             }
-            if (!document.getElementById('ho_ten').value || !document.getElementById('noi_dung').value) {
-                 alert('Vui lòng nhập Họ tên và Nội dung đơn.');
-                 return;
+            if (accounts[username]) {
+                return alert('Tên đăng nhập đã tồn tại.');
+            }
+            if (password.length < 3) {
+                 return alert('Mật khẩu phải có ít nhất 3 ký tự.');
             }
 
-            const id = document.getElementById('edit-id').value;
-            const don = {
-                ngay_nhan: document.getElementById('ngay_nhan').value,
-                nguon_don: document.getElementById('nguon_don').value,
-                ho_ten: document.getElementById('ho_ten').value,
-                dia_chi: document.getElementById('dia_chi').value,
-                ngay_ghi: document.getElementById('ngay_ghi').value,
-                phan_loai: document.getElementById('phan_loai').value,
-                tham_quyen: document.getElementById('tham_quyen').value,
-                can_bo_phan_cong: document.getElementById('can_bo_phan_cong').value,
-                chuc_danh: document.getElementById('chuc_danh').value,
-                chuyen_den: document.getElementById('chuyen_den').value,
-                ngay_chuyen_don: document.getElementById('ngay_chuyen_don').value,
-                can_cu: getCanCuData(),
-                noi_dung: document.getElementById('noi_dung').value,
-                de_xuat: document.getElementById('de_xuat').value,
-                ket_qua: document.getElementById('ket_qua').value,
-                lastUpdatedBy: currentUser.username,
-                lastUpdated: new Date().toISOString(),
-                // Lưu thêm đơn vị và vai trò người tạo để tiện cho việc lọc sau này
-                createdByUnit: currentUser.unit, 
-                createdByRole: currentUser.role
-            };
+            database.ref('accounts/' + username).set({
+                password: password,
+                role: role,
+                unit: unit
+            }).then(() => {
+                alert('Tạo tài khoản thành công!');
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
+                loadAccounts();
+            }).catch(error => {
+                alert('Lỗi khi tạo tài khoản: ' + error.message);
+            });
+        }
 
-            const ref = id ? database.ref('dons/' + id) : database.ref('dons').push();
+        function deleteAccount(username) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${username}"?`)) return;
 
-            ref.set(don)
+            database.ref('accounts/' + username).remove()
                 .then(() => {
-                    alert(id ? 'Cập nhật đơn thành công!' : 'Lưu đơn thành công!');
-                    clearForm();
-                    updateTable();
-                })
-                .catch(error => {
-                    alert('Lỗi khi lưu đơn: ' + error.message);
+                    alert('Xóa tài khoản thành công!');
+                    loadAccounts();
+                }).catch(error => {
+                    alert('Lỗi khi xóa tài khoản: ' + error.message);
+                });
+        }
+
+        function resetPassword(username) {
+            if (!confirm(`Bạn có chắc chắn muốn đặt lại mật khẩu của tài khoản "${username}" về "123"?`)) return;
+
+            database.ref('accounts/' + username + '/password').set('123')
+                .then(() => {
+                    alert('Đã đặt lại mật khẩu thành công!');
+                }).catch(error => {
+                    alert('Lỗi khi đặt lại mật khẩu: ' + error.message);
                 });
         }
         
-        function populateForm(don) {
-            document.getElementById('ngay_nhan').value = don.ngay_nhan || '';
-            document.getElementById('nguon_don').value = don.nguon_don || '';
-            document.getElementById('ho_ten').value = don.ho_ten || '';
-            document.getElementById('dia_chi').value = don.dia_chi || '';
-            document.getElementById('ngay_ghi').value = don.ngay_ghi || '';
-            document.getElementById('phan_loai').value = don.phan_loai || '';
-            document.getElementById('tham_quyen').value = don.tham_quyen || '';
-            document.getElementById('can_bo_phan_cong').value = don.can_bo_phan_cong || '';
-            document.getElementById('chuc_danh').value = don.chuc_danh || '';
-            document.getElementById('chuyen_den').value = don.chuyen_den || '';
-            document.getElementById('ngay_chuyen_don').value = don.ngay_chuyen_don || '';
-            document.getElementById('noi_dung').value = don.noi_dung || '';
-            document.getElementById('de_xuat').value = don.de_xuat || '';
-            document.getElementById('ket_qua').value = don.ket_qua || '';
-            document.getElementById('edit-id').value = don.id;
-            
-            // Cập nhật căn cứ
-            populateCanCuFields(don.can_cu, '');
-            
-            // Cuộn lên đầu sidebar
-            document.querySelector('.sidebar').scrollTop = 0;
-        }
-
-        function populateEditModal(don) {
-            document.getElementById('sua-ngay_nhan').value = don.ngay_nhan || '';
-            document.getElementById('sua-nguon_don').value = don.nguon_don || '';
-            document.getElementById('sua-ho_ten').value = don.ho_ten || '';
-            document.getElementById('sua-dia_chi').value = don.dia_chi || '';
-            document.getElementById('sua-ngay_ghi').value = don.ngay_ghi || '';
-            document.getElementById('sua-phan_loai').value = don.phan_loai || '';
-            document.getElementById('sua-tham_quyen').value = don.tham_quyen || '';
-            document.getElementById('sua-can_bo_phan_cong').value = don.can_bo_phan_cong || '';
-            document.getElementById('sua-chuc_danh').value = don.chuc_danh || '';
-            document.getElementById('sua-chuyen_den').value = don.chuyen_den || '';
-            document.getElementById('sua-ngay_chuyen_don').value = don.ngay_chuyen_don || '';
-            document.getElementById('sua-noi_dung').value = don.noi_dung || '';
-            document.getElementById('sua-de_xuat').value = don.de_xuat || '';
-            document.getElementById('sua-ket_qua').value = don.ket_qua || '';
-            document.getElementById('edit-id-modal').value = don.id; 
-            
-            // Cập nhật căn cứ
-            populateCanCuFields(don.can_cu, 'sua-');
-
-            document.getElementById('editModal').style.display = 'flex';
-        }
-        
-        function updateDon() {
-             const id = document.getElementById('edit-id-modal').value;
-             if (!id) return alert('Không tìm thấy ID đơn để cập nhật.');
+        function capNhatDonViTheoVaiTro() {
+             const role = document.getElementById('new-role').value;
+             const unitSelect = document.getElementById('new-unit');
              
-             if (!document.getElementById('sua-ho_ten').value || !document.getElementById('sua-noi_dung').value) {
-                 alert('Vui lòng nhập Họ tên và Nội dung đơn.');
-                 return;
-            }
+             // Thiết lập danh sách đơn vị
+             let availableUnits = lookupData['Đơn vị'];
+             
+             // Xóa và thêm lại options
+             unitSelect.innerHTML = '<option value="Chọn">--Chọn Đơn vị--</option>';
+             availableUnits.forEach(unit => {
+                 const option = document.createElement('option');
+                 option.value = unit;
+                 option.textContent = unit;
+                 unitSelect.appendChild(option);
+             });
+             
+             // Tự động chọn đơn vị mặc định cho Cán bộ TT-KT
+             if (role.includes('_TP')) {
+                 unitSelect.value = 'TT-KT';
+             } else if (role.includes('_KV')) {
+                 // Không chọn mặc định, để người dùng chọn
+                 unitSelect.value = 'Chọn'; 
+             } else if (role === 'admin') {
+                  unitSelect.value = 'TT-KT';
+             }
+        }
 
-            const don = {
-                ngay_nhan: document.getElementById('sua-ngay_nhan').value,
-                nguon_don: document.getElementById('sua-nguon_don').value,
-                ho_ten: document.getElementById('sua-ho_ten').value,
-                dia_chi: document.getElementById('sua-dia_chi').value,
-                ngay_ghi: document.getElementById('sua-ngay_ghi').value,
-                phan_loai: document.getElementById('sua-phan_loai').value,
-                tham_quyen: document.getElementById('sua-tham_quyen').value,
-                can_bo_phan_cong: document.getElementById('sua-can_bo_phan_cong').value,
-                chuc_danh: document.getElementById('sua-chuc_danh').value,
-                chuyen_den: document.getElementById('sua-chuyen_den').value,
-                ngay_chuyen_don: document.getElementById('sua-ngay_chuyen_don').value,
-                can_cu: getCanCuData('sua-'),
-                noi_dung: document.getElementById('sua-noi_dung').value,
-                de_xuat: document.getElementById('sua-de_xuat').value,
-                ket_qua: document.getElementById('sua-ket_qua').value,
-                lastUpdatedBy: currentUser.username,
-                lastUpdated: new Date().toISOString()
-                // Giữ nguyên createdByUnit và createdByRole
-            };
-            
-            database.ref('dons/' + id).update(don)
-                .then(() => {
-                    alert('Cập nhật đơn thành công!');
-                    document.getElementById('editModal').style.display = 'none';
-                    updateTable();
-                })
-                .catch(error => {
-                    alert('Lỗi khi cập nhật đơn: ' + error.message);
-                });
+
+        // --- UTILITY FUNCTIONS ---
+        
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
         }
         
-        function editDon(id) {
-            const don = dons.find(d => d.id === id);
-            if (don) {
-                // Kiểm tra quyền chỉnh sửa
-                if (canEditDelete(don)) {
-                     // Nếu có quyền, mở modal sửa
-                     populateEditModal(don);
-                } else {
-                     alert('Bạn không có quyền chỉnh sửa đơn này.');
+        function parseDate(dateString) {
+             if (!dateString) return null;
+             // Định dạng chuẩn: YYYY-MM-DD
+             return dateString;
+        }
+
+        function initSelectOptions() {
+            ['nguon_don', 'chuyen_den', 'sua-nguon_don', 'sua-chuyen_den'].forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = '<option value="Chọn">--Chọn--</option>';
+                const key = id.includes('nguon_don') ? 'Nguồn đơn' : 'Chuyển đến';
+                lookupData[key].forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    select.appendChild(option);
+                });
+            });
+             populateUnitSelect('new-unit');
+        }
+        
+        // Thêm/Xóa căn cứ
+        function addCanCu(prefix = '') {
+            const container = document.getElementById(prefix + 'can_cu_container');
+            const newItem = document.createElement('div');
+            newItem.className = 'can-cu-item';
+            newItem.innerHTML = `
+                <input type="number" placeholder="Điểm" class="can-cu-diem" value="">
+                <input type="number" placeholder="Khoản" class="can-cu-khoan" value="">
+                <input type="number" placeholder="Điều" class="can-cu-dieu" value="">
+                <input type="text" placeholder="Tên Văn bản/Quy chế" class="can-cu-van-ban" value="">
+                <button onclick="this.parentNode.remove()">Xóa</button>
+            `;
+            container.appendChild(newItem);
+        }
+        
+        function getCanCuData(prefix = '') {
+            const container = document.getElementById(prefix + 'can_cu_container');
+            const items = container.querySelectorAll('.can-cu-item');
+            const canCuList = [];
+            items.forEach(item => {
+                const diem = item.querySelector('.can-cu-diem').value.trim();
+                const khoan = item.querySelector('.can-cu-khoan').value.trim();
+                const dieu = item.querySelector('.can-cu-dieu').value.trim();
+                const van_ban = item.querySelector('.can-cu-van-ban').value.trim();
+                
+                if (diem || khoan || dieu || van_ban) {
+                     canCuList.push({ diem, khoan, dieu, van_ban });
                 }
-            } else {
-                alert('Không tìm thấy đơn.');
-            }
+            });
+            return canCuList;
         }
 
-        function deleteDon(id) {
-            const don = dons.find(d => d.id === id);
-             if (!don) return;
+        function populateCanCuFields(canCuList, prefix = '') {
+             const container = document.getElementById(prefix + 'can_cu_container');
+             container.innerHTML = '';
              
-            if (!canEditDelete(don)) {
-                 alert('Bạn không có quyền xóa đơn này.');
+             if (!canCuList || canCuList.length === 0) {
+                 // Nếu không có dữ liệu, tạo một dòng trống để tiện nhập liệu
+                 addCanCu(prefix);
                  return;
-            }
-             
-            if (confirm('Bạn có chắc chắn muốn xóa đơn này?')) {
-                database.ref('dons/' + id).remove()
-                    .then(() => {
-                        alert('Đơn đã được xóa.');
-                        updateTable();
-                    })
-                    .catch(error => {
-                        alert('Lỗi khi xóa đơn: ' + error.message);
-                    });
-            }
-        }
-        
-        /**
-         * CHỈNH SỬA: Hàm kiểm tra quyền chỉnh sửa/xóa đơn
-         * Chỉ cho phép sửa/xóa nếu:
-         * 1. Là Admin (admin/super_admin).
-         * 2. Là người tạo/cập nhật cuối cùng của đơn đó.
-         */
-        function canEditDelete(don) {
-             if (!currentUser) return false;
-             
-             // 1. Admin/Super_admin có quyền tuyệt đối
-             if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
-                 return true;
              }
              
-             // 2. Các tài khoản khác chỉ được sửa đơn của chính mình đã tạo/cập nhật gần nhất
-             return don.lastUpdatedBy === currentUser.username;
+             canCuList.forEach(item => {
+                 const newItem = document.createElement('div');
+                 newItem.className = 'can-cu-item';
+                 newItem.innerHTML = `
+                     <input type="number" placeholder="Điểm" class="can-cu-diem" value="${item.diem || ''}">
+                     <input type="number" placeholder="Khoản" class="can-cu-khoan" value="${item.khoan || ''}">
+                     <input type="number" placeholder="Điều" class="can-cu-dieu" value="${item.dieu || ''}">
+                     <input type="text" placeholder="Tên Văn bản/Quy chế" class="can-cu-van-ban" value="${item.van_ban || ''}">
+                     <button onclick="this.parentNode.remove()">Xóa</button>
+                 `;
+                 container.appendChild(newItem);
+             });
         }
         
         function capNhatThamQuyenMacDinh(prefix = '') {
@@ -1232,687 +1078,707 @@
             } else if (phanLoai === 'Khiếu nại' || phanLoai === 'Tố cáo' || phanLoai === 'Yêu cầu bồi thường thiệt hại') {
                 thamQuyenSelect.value = 'Thuộc thẩm quyền giải quyết';
             } else {
-                thamQuyenSelect.value = 'Chọn';
+                thamQuyenSelect.value = 'Chọn'; // Đặt lại về chọn nếu là phân loại khác
             }
         }
-        
-        // --- CĂN CỨ FUNCTIONS (ĐÃ SỬA ĐỔI) ---
 
-        function getVanBanOptions(selectedValue = '') {
-            let options = '';
-            vanBanList.forEach(item => {
-                const selected = item === selectedValue ? 'selected' : '';
-                options += `<option value="${item}" ${selected}>${item}</option>`;
-            });
-            return options;
-        }
-        
-        function toggleCustomVanBan(selectId, containerId) {
-            const select = document.getElementById(selectId);
-            const container = document.getElementById(containerId);
-            if (select.value === 'Tự điền vào văn bản') {
-                container.style.display = 'flex'; // Hiện input khi chọn Tự điền
+
+        // --- CRUD FUNCTIONS ---
+
+        function saveDon() {
+            if (!currentUser) return alert('Vui lòng đăng nhập để lưu đơn.');
+
+            const data = {
+                ngay_nhan: parseDate(document.getElementById('ngay_nhan').value),
+                nguon_don: document.getElementById('nguon_don').value,
+                ho_ten: document.getElementById('ho_ten').value.trim(),
+                dia_chi: document.getElementById('dia_chi').value.trim(),
+                ngay_ghi: parseDate(document.getElementById('ngay_ghi').value),
+                phan_loai: document.getElementById('phan_loai').value,
+                tham_quyen: document.getElementById('tham_quyen').value,
+                can_bo_phan_cong: document.getElementById('can_bo_phan_cong').value.trim(),
+                chuc_danh: document.getElementById('chuc_danh').value,
+                chuyen_den: document.getElementById('chuyen_den').value,
+                ngay_chuyen_don: parseDate(document.getElementById('ngay_chuyen_don').value),
+                can_cu: getCanCuData(),
+                noi_dung: document.getElementById('noi_dung').value.trim(),
+                de_xuat: document.getElementById('de_xuat').value.trim(),
+                ket_qua: document.getElementById('ket_qua').value.trim(),
+                user_unit: currentUser.unit, // Lưu đơn vị của người tạo
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            // Validation
+            if (!data.ngay_nhan || !data.ho_ten || data.tham_quyen === 'Chọn' || data.phan_loai === 'Chọn') {
+                return alert('Vui lòng nhập đủ các trường bắt buộc: Ngày nhận đơn, Họ tên, Phân loại, Thẩm quyền.');
+            }
+
+            const editId = document.getElementById('edit-id').value;
+
+            if (editId) {
+                // Update existing record
+                database.ref('dons/' + editId).update(data)
+                    .then(() => {
+                        alert('Cập nhật đơn thành công!');
+                        updateTable();
+                        resetForm();
+                    })
+                    .catch(error => alert('Lỗi khi cập nhật đơn: ' + error.message));
             } else {
-                container.style.display = 'none';
+                // Save new record
+                database.ref('dons').push(data)
+                    .then(() => {
+                        alert('Lưu đơn thành công!');
+                        updateTable();
+                        resetForm();
+                    })
+                    .catch(error => alert('Lỗi khi lưu đơn: ' + error.message));
             }
         }
         
-        function addCanCu(prefix = '') {
-            const container = document.getElementById(prefix + 'can_cu_container');
+        function resetForm(prefix = '') {
+            document.getElementById(prefix + 'ngay_nhan').value = new Date().toISOString().slice(0, 10);
+            document.getElementById(prefix + 'nguon_don').value = 'Chọn';
+            document.getElementById(prefix + 'ho_ten').value = '';
+            document.getElementById(prefix + 'dia_chi').value = '';
+            document.getElementById(prefix + 'ngay_ghi').value = '';
+            document.getElementById(prefix + 'phan_loai').value = 'Khiếu nại'; // Mặc định là Khiếu nại
+            document.getElementById(prefix + 'tham_quyen').value = 'Thuộc thẩm quyền giải quyết'; // Mặc định
+            document.getElementById(prefix + 'chuc_danh').value = 'Chọn';
+            document.getElementById(prefix + 'chuyen_den').value = 'Chọn';
+            document.getElementById(prefix + 'ngay_chuyen_don').value = '';
+            document.getElementById(prefix + 'noi_dung').value = '';
+            document.getElementById(prefix + 'de_xuat').value = '';
+            document.getElementById(prefix + 'ket_qua').value = '';
+            document.getElementById(prefix + 'edit-id').value = '';
             
-            // Tìm index lớn nhất để đảm bảo ID là duy nhất
-            let maxIndex = -1;
-            const rowElements = Array.from(container.querySelectorAll('.can-cu-row'));
-            rowElements.forEach(row => {
-                 const match = row.id.match(/_(\d+)$/);
-                 if (match) {
-                     const index = parseInt(match[1]);
-                     if (index > maxIndex) {
-                         maxIndex = index;
-                     }
-                 }
-            });
-            const newIndex = maxIndex + 1;
-            
-            // 1. Tạo container cho toàn bộ hàng (bao gồm input tùy chọn)
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'can-cu-row';
-            rowDiv.id = prefix + 'can_cu_row_' + newIndex; 
-            
-            // 2. Main line (Điểm, Khoản, Điều, Văn bản, Button)
-            const mainDiv = document.createElement('div');
-            mainDiv.className = 'can-cu-item';
-            mainDiv.id = prefix + 'can_cu_item_' + newIndex;
-            mainDiv.innerHTML = `
-                <input type="text" id="${prefix}diem_${newIndex}" placeholder="Điểm">
-                <input type="text" id="${prefix}khoan_${newIndex}" placeholder="Khoản">
-                <input type="text" id="${prefix}dieu_${newIndex}" placeholder="Điều">
-                <select id="${prefix}van_ban_${newIndex}" onchange="toggleCustomVanBan('${prefix}van_ban_${newIndex}', '${prefix}van_ban_khac_container_${newIndex}')">
-                    ${getVanBanOptions()}
-                </select>
-                <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_row_${newIndex}')">Xóa</button>
-            `;
-            
-            // 3. Custom text line (Tự điền Văn bản khác)
-            const customDiv = document.createElement('div');
-            customDiv.id = prefix + 'van_ban_khac_container_' + newIndex;
-            customDiv.className = 'can-cu-sub-item form-group'; 
-            customDiv.innerHTML = `
-                 <label for="${prefix}van_ban_khac_${newIndex}" style="font-weight: normal; margin-top: 5px;">Tên Văn bản khác:</label>
-                 <input type="text" id="${prefix}van_ban_khac_${newIndex}" placeholder="Nhập tên Văn bản khác (Tự điền)">
-            `;
-            
-            rowDiv.appendChild(mainDiv);
-            rowDiv.appendChild(customDiv);
-            container.appendChild(rowDiv);
-        }
-
-        function removeCanCu(id) {
-            // Xóa toàn bộ row container
-            const element = document.getElementById(id);
-            if (element) {
-                element.remove();
+            // Cán bộ phân công (không reset nếu là form chính)
+            if (prefix !== 'sua-') {
+                 document.getElementById('can_bo_phan_cong').value = currentUser ? currentUser.username : '';
+            } else {
+                 document.getElementById('sua-can_bo_phan_cong').value = '';
             }
-        }
-        
-        function getCanCuData(prefix = '') {
-            const container = document.getElementById(prefix + 'can_cu_container');
-            const canCuList = [];
             
-            // Lấy tất cả các 'can-cu-row' elements
-            const rowElements = Array.from(container.querySelectorAll('.can-cu-row'));
-
-            rowElements.forEach(row => {
-                // Lấy index từ ID của row
-                const match = row.id.match(/_(\d+)$/);
-                if (!match) return;
-                const index = match[1];
-                
-                // Lấy giá trị các trường
-                const diem = document.getElementById(`${prefix}diem_${index}`)?.value.trim() || '';
-                const khoan = document.getElementById(`${prefix}khoan_${index}`)?.value.trim() || '';
-                const dieu = document.getElementById(`${prefix}dieu_${index}`)?.value.trim() || '';
-                const van_ban_select = document.getElementById(`${prefix}van_ban_${index}`)?.value || '';
-                const van_ban_khac = document.getElementById(`${prefix}van_ban_khac_${index}`)?.value.trim() || '';
-                
-                // Xác định Văn bản cuối cùng
-                let van_ban = van_ban_select;
-                if (van_ban_select === 'Tự điền vào văn bản') {
-                    van_ban = van_ban_khac;
-                }
-                
-                // Chỉ lưu nếu có ít nhất một trường dữ liệu quan trọng
-                if (diem || khoan || dieu || van_ban) {
-                    canCuList.push({ 
-                        diem: diem, 
-                        khoan: khoan, 
-                        dieu: dieu, 
-                        van_ban: van_ban 
-                    });
-                }
-            });
-
-            return canCuList;
+            // Reset căn cứ
+            populateCanCuFields([], prefix);
         }
 
-
-        function populateCanCuFields(canCuData, prefix = '') {
-            const container = document.getElementById(prefix + 'can_cu_container');
-            container.innerHTML = '';
-            
-            if (canCuData && canCuData.length > 0) {
-                canCuData.forEach((item, index) => {
-                    // Xác định giá trị Văn bản hiển thị trên select và input tùy chọn
-                    let selectedVanBan = item.van_ban;
-                    let customVanBanValue = '';
-                    let isCustom = false;
-                    
-                    if (!vanBanList.includes(item.van_ban)) {
-                        selectedVanBan = 'Tự điền vào văn bản'; // Chọn option Tự điền
-                        customVanBanValue = item.van_ban; // Đưa giá trị thực vào input tùy chọn
-                        isCustom = true;
-                    }
-                    
-                    const rowDiv = document.createElement('div');
-                    rowDiv.className = 'can-cu-row';
-                    rowDiv.id = prefix + 'can_cu_row_' + index;
-                    
-                    // 1. Main line
-                    const mainDiv = document.createElement('div');
-                    mainDiv.className = 'can-cu-item';
-                    mainDiv.id = prefix + 'can_cu_item_' + index;
-                    mainDiv.innerHTML = `
-                        <input type="text" id="${prefix}diem_${index}" placeholder="Điểm" value="${item.diem || ''}">
-                        <input type="text" id="${prefix}khoan_${index}" placeholder="Khoản" value="${item.khoan || ''}">
-                        <input type="text" id="${prefix}dieu_${index}" placeholder="Điều" value="${item.dieu || ''}">
-                        <select id="${prefix}van_ban_${index}" onchange="toggleCustomVanBan('${prefix}van_ban_${index}', '${prefix}van_ban_khac_container_${index}')">
-                            ${getVanBanOptions(selectedVanBan)}
-                        </select>
-                        <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_row_${index}')">Xóa</button>
-                    `;
-                    
-                    // 2. Custom text line
-                    const customDiv = document.createElement('div');
-                    customDiv.id = prefix + 'van_ban_khac_container_' + index;
-                    customDiv.className = 'can-cu-sub-item form-group';
-                    customDiv.style.display = isCustom ? 'flex' : 'none'; // Set display
-                    customDiv.innerHTML = `
-                         <label for="${prefix}van_ban_khac_${index}" style="font-weight: normal; margin-top: 5px;">Tên Văn bản khác:</label>
-                         <input type="text" id="${prefix}van_ban_khac_${index}" placeholder="Nhập tên Văn bản khác (Tự điền)" value="${customVanBanValue}">
-                    `;
-
-                    rowDiv.appendChild(mainDiv);
-                    rowDiv.appendChild(customDiv);
-                    container.appendChild(rowDiv);
-                });
-            } 
-            addCanCu(prefix); // Luôn thêm một dòng trống
-        }
-
-
-        // --- FIREBASE LISTENERS ---
-        database.ref('dons').on('value', (snapshot) => {
-            const donObj = snapshot.val();
-            dons = [];
-            for (let key in donObj) {
-                // Gán id trực tiếp vào object để dễ thao tác
-                dons.push({ id: key, ...donObj[key] });
-            }
-            // Chỉ cập nhật bảng nếu người dùng đã đăng nhập
-            if (currentUser) {
-                updateTable();
-            }
-        });
-        
-        // --- DATA DISPLAY AND FILTERING ---
-        
-        /**
-         * Hàm kích hoạt tìm kiếm
-         */
-        function filterTable() {
-            updateTable();
-        }
-
-        /**
-         * Hàm xóa bộ lọc tìm kiếm
-         */
-        function resetFilter() {
-            document.getElementById('search-text').value = '';
-            document.getElementById('search-date').value = '';
-            updateTable();
-        }
-
-        /**
-         * CHỈNH SỬA: Hàm cập nhật bảng, bao gồm cả logic lọc theo quyền hạn VÀ logic lọc theo ô tìm kiếm
-         */
         function updateTable() {
             if (!currentUser) return;
 
-            // 1. Lấy giá trị từ ô tìm kiếm
-            const searchText = document.getElementById('search-text').value.toLowerCase().trim();
-            const searchDate = document.getElementById('search-date').value;
+            let ref = database.ref('dons').orderByChild('timestamp');
             
-            // 2. Lọc dữ liệu theo Đơn vị và Quyền hạn của người dùng (Logic bảo mật)
-            let currentFilteredDons = dons.filter(don => {
-                const donUnit = don.createdByUnit; // Đơn vị tạo đơn
-                const donCreator = don.lastUpdatedBy; // Người tạo/cập nhật cuối cùng
+            // Lọc theo đơn vị (user_unit)
+            // Lãnh đạo cấp KV chỉ thấy đơn vị mình
+            // Cán bộ cấp KV chỉ thấy đơn vị mình
+            // Lãnh đạo/Cán bộ cấp TP/Admin thấy tất cả (nếu user_unit là TT-KT hoặc admin)
+            if (currentUser.role === 'manager_KV' || currentUser.role === 'user_KV') {
+                ref = database.ref('dons').orderByChild('user_unit').equalTo(currentUser.unit);
+            }
+            // Các role khác sẽ không áp dụng lọc, lấy tất cả theo timestamp (TT-KT là đơn vị quản lý chung)
 
-                switch (currentUser.role) {
-                    case 'admin':
-                    case 'super_admin':
-                    case 'manager_TP':
-                        // Admin và Lãnh đạo TP thấy tất cả
-                        return true;
-                    
-                    case 'user_TP':
-                        // Cán bộ TP chỉ thấy đơn mình tạo
-                        return donCreator === currentUser.username;
-                        
-                    case 'manager_KV':
-                        // Lãnh đạo KV chỉ thấy đơn của đơn vị mình
-                        return donUnit === currentUser.unit;
-
-                    case 'user_KV':
-                        // Cán bộ KV chỉ thấy đơn mình tạo
-                        return donCreator === currentUser.username;
-
-                    default:
-                        return false;
-                }
+            ref.once('value', snapshot => {
+                const data = snapshot.val() || {};
+                // Đảo ngược thứ tự để đơn mới nhất lên đầu
+                dons = Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse(); 
+                renderTable(dons);
             });
+        }
 
-
-            // 3. Áp dụng bộ lọc tìm kiếm (Họ tên/Cơ quan/Tổ chức và Ngày nhận đơn)
-            const finalFilteredDons = currentFilteredDons.filter(don => {
-                let textMatch = true;
-                let dateMatch = true;
-
-                // Lọc theo Họ tên/Cơ quan/Tổ chức (ho_ten)
-                if (searchText) {
-                    textMatch = don.ho_ten && don.ho_ten.toLowerCase().includes(searchText);
-                }
-
-                // Lọc theo Ngày nhận đơn (ngay_nhan)
-                if (searchDate) {
-                    dateMatch = don.ngay_nhan === searchDate;
-                }
-
-                return textMatch && dateMatch;
-            });
-
-            // 4. Render table
-            const body = document.getElementById('don-body');
-            body.innerHTML = '';
-
-            finalFilteredDons.sort((a, b) => new Date(b.ngay_nhan) - new Date(a.ngay_nhan));
-
-            finalFilteredDons.forEach((don, index) => {
-                const row = body.insertRow();
-                // Đảm bảo số thứ tự được tính trên danh sách đã lọc
-                row.insertCell().textContent = index + 1;
-                // Ngày nhận đơn
-                row.insertCell().textContent = don.ngay_nhan || '';
-                // Họ tên /CQ/ TC
-                row.insertCell().textContent = don.ho_ten || '';
-                // Nội dung đơn (hiển thị tóm tắt)
-                const noiDungCell = row.insertCell();
-                noiDungCell.textContent = (don.noi_dung || '').substring(0, 50) + '...';
-                // Phân loại
-                row.insertCell().textContent = don.phan_loai || '';
-                // Thẩm quyền
-                row.insertCell().textContent = don.tham_quyen || '';
-                // Xử lý đơn (Kết quả)
-                const ketQuaCell = row.insertCell();
-                ketQuaCell.textContent = (don.ket_qua || '').substring(0, 50) + '...';
-
-                // Thao tác
-                const actionsCell = row.insertCell();
-                actionsCell.classList.add('table-actions');
-                
-                // Quyền sửa/xóa - Giao diện không disable, chỉ kiểm tra khi click
-                const canModify = canEditDelete(don); 
-                
-                actionsCell.innerHTML = `
-                    <button class="edit-btn" onclick="editDon('${don.id}')">Sửa</button>
-                    <button class="delete-btn" onclick="deleteDon('${don.id}')">Xóa</button>
-                    <button class="proposal-print-btn" onclick="showProposalModal('${don.id}')">Đề xuất/Xử lý</button>
+        function renderTable(filteredDons) {
+            const donBody = document.getElementById('don-body');
+            donBody.innerHTML = '';
+            filteredDons.forEach((don, index) => {
+                const row = donBody.insertRow();
+                row.onclick = () => selectDon(don.id); 
+                row.id = `row-${don.id}`; // Thêm ID cho hàng
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${formatDate(don.ngay_nhan)}</td>
+                    <td>${don.ho_ten}</td>
+                    <td>${don.noi_dung.substring(0, 50)}...</td>
+                    <td>${don.phan_loai}</td>
+                    <td>${don.tham_quyen}</td>
+                    <td>${don.chuyen_den} (${formatDate(don.ngay_chuyen_don)})</td>
+                    <td class="table-actions">
+                        <button class="edit-btn" onclick="showEditModal('${don.id}', event)">Sửa</button>
+                        <button class="delete-btn" onclick="deleteDon('${don.id}', event)">Xóa</button>
+                    </td>
                 `;
-
-                // Lưu ID cho thao tác trích xuất và highlight hàng (nếu muốn)
-                row.onclick = () => {
-                    // Xóa highlight của các hàng khác
-                    Array.from(body.children).forEach(r => r.style.backgroundColor = '');
-                    // Highlight hàng hiện tại
-                    row.style.backgroundColor = '#d1e7dd'; 
-                    currentSelectedId = don.id;
-                };
             });
-            
-             // Xóa currentSelectedId nếu bảng rỗng
-            if (finalFilteredDons.length === 0) {
-                 currentSelectedId = null;
+            // Áp dụng lại lớp đã chọn
+            if (currentSelectedId) {
+                 const selectedRow = document.getElementById(`row-${currentSelectedId}`);
+                 if (selectedRow) selectedRow.style.backgroundColor = '#bbdefb';
             }
         }
         
-        function showProposalModal(id) {
-            if (!id) {
-                alert('Vui lòng chọn một đơn trong danh sách (click vào hàng) để xem đề xuất/xử lý.');
-                return;
+        function selectDon(id) {
+            // Xóa highlight cũ
+            if (currentSelectedId) {
+                const oldRow = document.getElementById(`row-${currentSelectedId}`);
+                if (oldRow) oldRow.style.backgroundColor = '';
             }
-            currentSelectedId = id; // Đảm bảo ID được cập nhật cho nút export
-            const don = dons.find(d => d.id === id);
-            if (!don) return alert('Không tìm thấy đơn.');
-
-            const proposalContent = generateProposalContent(don);
-            document.getElementById('proposal-content').textContent = proposalContent;
-            document.getElementById('proposalModal').style.display = 'flex';
+            
+            // Highlight mới
+            const newRow = document.getElementById(`row-${id}`);
+            if (newRow) newRow.style.backgroundColor = '#bbdefb'; // Light blue
+            
+            currentSelectedId = id;
         }
+
+        function filterTable() {
+            const searchText = document.getElementById('search-text').value.toLowerCase();
+            const searchDate = document.getElementById('search-date').value;
+
+            const filtered = dons.filter(don => {
+                const nameMatch = don.ho_ten.toLowerCase().includes(searchText);
+                const dateMatch = !searchDate || don.ngay_nhan === searchDate;
+                return nameMatch && dateMatch;
+            });
+
+            renderTable(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('search-text').value = '';
+            document.getElementById('search-date').value = '';
+            renderTable(dons);
+        }
+        
+        function showEditModal(id, event) {
+            event.stopPropagation(); // Ngăn chặn sự kiện click lan truyền lên hàng
+
+            const don = dons.find(d => d.id === id);
+            if (!don) return alert('Không tìm thấy đơn!');
+            
+            // Kiểm tra quyền Sửa
+            if (!checkEditPermission(don)) return alert('Bạn không có quyền sửa đơn này.');
+            
+            document.getElementById('edit-id-modal').value = id;
+            
+            document.getElementById('sua-ngay_nhan').value = don.ngay_nhan || '';
+            document.getElementById('sua-nguon_don').value = don.nguon_don || 'Chọn';
+            document.getElementById('sua-ho_ten').value = don.ho_ten || '';
+            document.getElementById('sua-dia_chi').value = don.dia_chi || '';
+            document.getElementById('sua-ngay_ghi').value = don.ngay_ghi || '';
+            document.getElementById('sua-phan_loai').value = don.phan_loai || 'Chọn';
+            // Cập nhật thẩm quyền mặc định trước khi set giá trị
+            capNhatThamQuyenMacDinh('sua-');
+            document.getElementById('sua-tham_quyen').value = don.tham_quyen || 'Chọn'; 
+            document.getElementById('sua-can_bo_phan_cong').value = don.can_bo_phan_cong || '';
+            document.getElementById('sua-chuc_danh').value = don.chuc_danh || 'Chọn';
+            document.getElementById('sua-chuyen_den').value = don.chuyen_den || 'Chọn';
+            document.getElementById('sua-ngay_chuyen_don').value = don.ngay_chuyen_don || '';
+            document.getElementById('sua-noi_dung').value = don.noi_dung || '';
+            document.getElementById('sua-de_xuat').value = don.de_xuat || '';
+            document.getElementById('sua-ket_qua').value = don.ket_qua || '';
+            
+            populateCanCuFields(don.can_cu, 'sua-');
+
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        function updateDon() {
+            if (!currentUser) return alert('Vui lòng đăng nhập để cập nhật đơn.');
+
+            const id = document.getElementById('edit-id-modal').value;
+            const don = dons.find(d => d.id === id);
+
+            if (!id || !don) return alert('Không tìm thấy đơn để cập nhật.');
+            if (!checkEditPermission(don)) return alert('Bạn không có quyền sửa đơn này.');
+
+            const updatedData = {
+                ngay_nhan: parseDate(document.getElementById('sua-ngay_nhan').value),
+                nguon_don: document.getElementById('sua-nguon_don').value,
+                ho_ten: document.getElementById('sua-ho_ten').value.trim(),
+                dia_chi: document.getElementById('sua-dia_chi').value.trim(),
+                ngay_ghi: parseDate(document.getElementById('sua-ngay_ghi').value),
+                phan_loai: document.getElementById('sua-phan_loai').value,
+                tham_quyen: document.getElementById('sua-tham_quyen').value,
+                can_bo_phan_cong: document.getElementById('sua-can_bo_phan_cong').value.trim(),
+                chuc_danh: document.getElementById('sua-chuc_danh').value,
+                chuyen_den: document.getElementById('sua-chuyen_den').value,
+                ngay_chuyen_don: parseDate(document.getElementById('sua-ngay_chuyen_don').value),
+                can_cu: getCanCuData('sua-'),
+                noi_dung: document.getElementById('sua-noi_dung').value.trim(),
+                de_xuat: document.getElementById('sua-de_xuat').value.trim(),
+                ket_qua: document.getElementById('sua-ket_qua').value.trim(),
+                // Không cập nhật user_unit và timestamp
+            };
+            
+            // Validation
+            if (!updatedData.ngay_nhan || !updatedData.ho_ten || updatedData.tham_quyen === 'Chọn' || updatedData.phan_loai === 'Chọn') {
+                return alert('Vui lòng nhập đủ các trường bắt buộc: Ngày nhận đơn, Họ tên, Phân loại, Thẩm quyền.');
+            }
+
+            database.ref('dons/' + id).update(updatedData)
+                .then(() => {
+                    alert('Cập nhật đơn thành công!');
+                    document.getElementById('editModal').style.display = 'none';
+                    updateTable();
+                })
+                .catch(error => alert('Lỗi khi cập nhật đơn: ' + error.message));
+        }
+
+        function deleteDon(id, event) {
+            event.stopPropagation(); // Ngăn chặn sự kiện click lan truyền lên hàng
+            
+            if (!currentUser) return alert('Vui lòng đăng nhập để xóa đơn.');
+            const don = dons.find(d => d.id === id);
+            
+            // Kiểm tra quyền Xóa
+            if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && currentUser.role !== 'manager_TP') {
+                return alert('Bạn không có quyền xóa đơn này.');
+            }
+
+            if (confirm('Bạn có chắc chắn muốn xóa đơn này?')) {
+                database.ref('dons/' + id).remove()
+                    .then(() => {
+                        alert('Xóa đơn thành công!');
+                        updateTable();
+                        if (currentSelectedId === id) currentSelectedId = null;
+                    })
+                    .catch(error => alert('Lỗi khi xóa đơn: ' + error.message));
+            }
+        }
+        
+        function checkEditPermission(don) {
+             if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
+                return true;
+             }
+             if (currentUser.role === 'manager_TP') {
+                return true; // Lãnh đạo cấp TP có quyền sửa tất cả (đơn vị TT-KT)
+             }
+             // Cán bộ cấp TP/KV chỉ được sửa đơn của mình trong đơn vị của mình
+             if (currentUser.role === 'user_TP' && don.user_unit === currentUser.unit) {
+                return don.can_bo_phan_cong === currentUser.username;
+             }
+             if (currentUser.role.includes('_KV') && don.user_unit === currentUser.unit) {
+                // Lãnh đạo KV được sửa tất cả đơn trong đơn vị, Cán bộ KV chỉ được sửa đơn của mình
+                return currentUser.role === 'manager_KV' || don.can_bo_phan_cong === currentUser.username;
+             }
+             return false;
+        }
+
 
         // --- EXPORT/REPORTING FUNCTIONS ---
 
         function exportList() {
-             // Lọc dữ liệu theo Đơn vị và Quyền hạn của người dùng (sử dụng logic lọc của updateTable)
-             
-            // 1. Lấy giá trị từ ô tìm kiếm
-            const searchText = document.getElementById('search-text').value.toLowerCase().trim();
-            const searchDate = document.getElementById('search-date').value;
-             
-             // 2. Lọc dữ liệu theo Quyền hạn của người dùng (Logic bảo mật)
-            let currentFilteredDons = dons.filter(don => {
-                const donUnit = don.createdByUnit;
-                const donCreator = don.lastUpdatedBy;
-
-                switch (currentUser.role) {
-                    case 'admin':
-                    case 'super_admin':
-                    case 'manager_TP':
-                        return true;
-                    
-                    case 'user_TP':
-                    case 'user_KV':
-                        return donCreator === currentUser.username;
-                        
-                    case 'manager_KV':
-                        return donUnit === currentUser.unit;
-
-                    default:
-                        return false;
-                }
-            });
-            
-            // 3. Áp dụng bộ lọc tìm kiếm
-            const finalFilteredDons = currentFilteredDons.filter(don => {
-                let textMatch = true;
-                let dateMatch = true;
-
-                if (searchText) {
-                    textMatch = don.ho_ten && don.ho_ten.toLowerCase().includes(searchText);
-                }
-                if (searchDate) {
-                    dateMatch = don.ngay_nhan === searchDate;
-                }
-                return textMatch && dateMatch;
-            });
-            
-            finalFilteredDons.sort((a, b) => new Date(b.ngay_nhan) - new Date(a.ngay_nhan));
-            
-            if (finalFilteredDons.length === 0) {
-                 alert('Không có đơn nào trong danh sách hiện tại để xuất.');
-                 return;
+            // Lấy dữ liệu từ bảng hiện tại (sau khi đã lọc)
+            const tableRows = Array.from(document.getElementById('don-body').rows);
+            if (tableRows.length === 0) {
+                 return alert("Không có dữ liệu đơn để xuất!");
             }
+            
+            // Chuẩn bị dữ liệu cho Excel
+            const header = [
+                "STT", "Ngày nhận đơn", "Họ tên/Cơ quan/Tổ chức", "Địa chỉ", "Đơn ghi ngày", "Phân loại", 
+                "Thẩm quyền", "Cán bộ phân công", "Chức danh", "Chuyển đến", "Ngày chuyển đơn", 
+                "Căn cứ", "Nội dung đơn", "Đề xuất", "Kết quả", "Đơn vị tạo"
+            ];
+            const data = [header];
+            
+            let filteredDons = [];
+            
+            // Lấy danh sách ID từ các hàng đang hiển thị
+            const visibleIds = tableRows.map(row => row.id.replace('row-', ''));
+            // Lọc ra các đơn tương ứng từ mảng `dons`
+            filteredDons = dons.filter(don => visibleIds.includes(don.id));
 
-            const dataToExport = finalFilteredDons.map((don, index) => {
-                 // Format căn cứ mới cho Excel
-                 const canCuText = don.can_cu ? don.can_cu.map(c => {
-                     const parts = [
-                         c.diem ? `Điểm ${c.diem}` : '',
-                         c.khoan ? `Khoản ${c.khoan}` : '',
-                         c.dieu ? `Điều ${c.dieu}` : ''
-                     ].filter(Boolean).join(', ');
-                     return `${parts} (${c.van_ban || 'Không rõ VB'})`;
-                 }).join('; ') : '';
-                 
-                return {
-                    'STT': index + 1,
-                    'Ngày nhận đơn': don.ngay_nhan || '',
-                    'Nguồn đơn': don.nguon_don || '',
-                    'Họ tên/CQ/TC': don.ho_ten || '',
-                    'Địa chỉ': don.dia_chi || '',
-                    'Đơn ghi ngày': don.ngay_ghi || '',
-                    'Phân loại': don.phan_loai || '',
-                    'Thẩm quyền': don.tham_quyen || '',
-                    'Cán bộ phân công': don.can_bo_phan_cong || '',
-                    'Chức danh': don.chuc_danh || '',
-                    'Chuyển đến': don.chuyen_den || '',
-                    'Ngày chuyển đơn': don.ngay_chuyen_don || '',
-                    'Nội dung đơn': don.noi_dung || '',
-                    'Căn cứ': canCuText, // Cập nhật Căn cứ
-                    'Đề xuất': don.de_xuat || '',
-                    'Kết quả': don.ket_qua || '',
-                    'Người cập nhật cuối': don.lastUpdatedBy || '',
-                    'Đơn vị tạo đơn': don.createdByUnit || '', 
-                    'Thời gian cập nhật': don.lastUpdated ? new Date(don.lastUpdated).toLocaleString('vi-VN') : ''
-                };
+
+            filteredDons.forEach((don, index) => {
+                const canCuText = (don.can_cu || [])
+                    .map(c => 
+                        `${c.diem ? `Điểm ${c.diem}` : ''} ${c.khoan ? `Khoản ${c.khoan}` : ''} ${c.dieu ? `Điều ${c.dieu}` : ''} ${c.van_ban || ''}`.trim()
+                    )
+                    .join('; ');
+                
+                data.push([
+                    index + 1,
+                    formatDate(don.ngay_nhan),
+                    don.ho_ten,
+                    don.dia_chi,
+                    formatDate(don.ngay_ghi),
+                    don.phan_loai,
+                    don.tham_quyen,
+                    don.can_bo_phan_cong,
+                    don.chuc_danh,
+                    don.chuyen_den,
+                    formatDate(don.ngay_chuyen_don),
+                    canCuText,
+                    don.noi_dung,
+                    don.de_xuat,
+                    don.ket_qua,
+                    don.user_unit
+                ]);
             });
 
-            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "DanhSachDon");
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "DanhSachDon");
 
-            // Xuất file
-            XLSX.writeFile(workbook, "Danh_sach_don_to_cao_khieu_nai.xlsx");
+            XLSX.writeFile(wb, "Danh_sach_don_khieu_nai_to_cao.xlsx");
         }
 
         function exportReport() {
-            // ... (Original logic for exporting report - GIỮ NGUYÊN) ...
-            alert('Chức năng xuất báo cáo đang được phát triển.');
+            if (dons.length === 0) {
+                 return alert("Không có dữ liệu đơn để xuất báo cáo!");
+            }
+            
+            const total = dons.length;
+            const thong_ke = {};
+            
+            // Thống kê theo Phân loại
+            const phan_loai_counts = {};
+            dons.forEach(don => {
+                 const pl = don.phan_loai || 'Không phân loại';
+                 phan_loai_counts[pl] = (phan_loai_counts[pl] || 0) + 1;
+            });
+            thong_ke['Phân loại'] = phan_loai_counts;
+
+            // Thống kê theo Thẩm quyền
+            const tham_quyen_counts = {};
+            dons.forEach(don => {
+                 const tq = don.tham_quyen || 'Không thẩm quyền';
+                 tham_quyen_counts[tq] = (tham_quyen_counts[tq] || 0) + 1;
+            });
+            thong_ke['Thẩm quyền'] = tham_quyen_counts;
+            
+            // Thống kê theo Kết quả xử lý (Chuyển đến)
+            const chuyen_den_counts = {};
+            dons.forEach(don => {
+                 const cd = don.chuyen_den || 'Chưa chuyển';
+                 chuyen_den_counts[cd] = (chuyen_den_counts[cd] || 0) + 1;
+            });
+            thong_ke['Kết quả xử lý'] = chuyen_den_counts;
+
+            // Chuyển kết quả thống kê thành mảng dữ liệu Excel
+            const reportData = [
+                 ["BÁO CÁO TỔNG HỢP ĐƠN KHIẾU NẠI - TỐ CÁO"],
+                 ["Tổng số đơn:", total],
+                 [],
+                 ["PHÂN LOẠI"],
+                 ["Loại đơn", "Số lượng", "Tỷ lệ (%)"]
+            ];
+            
+            for (const [key, count] of Object.entries(phan_loai_counts)) {
+                reportData.push([key, count, ((count / total) * 100).toFixed(2)]);
+            }
+            reportData.push([], ["THẨM QUYỀN"], ["Thẩm quyền", "Số lượng", "Tỷ lệ (%)"]);
+            for (const [key, count] of Object.entries(tham_quyen_counts)) {
+                reportData.push([key, count, ((count / total) * 100).toFixed(2)]);
+            }
+            reportData.push([], ["KẾT QUẢ XỬ LÝ"], ["Nơi chuyển đến", "Số lượng", "Tỷ lệ (%)"]);
+            for (const [key, count] of Object.entries(chuyen_den_counts)) {
+                reportData.push([key, count, ((count / total) * 100).toFixed(2)]);
+            }
+
+
+            const ws = XLSX.utils.aoa_to_sheet(reportData);
+            // Thiết lập độ rộng cột cho đẹp hơn
+            ws['!cols'] = [ { wch: 30 }, { wch: 10 }, { wch: 10 } ]; 
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "BaoCaoTongHop");
+
+            XLSX.writeFile(wb, "Bao_cao_tong_hop.xlsx");
         }
         
         function downloadJSON() {
-            // ... (Original logic for backing up JSON - GIỮ NGUYÊN) ...
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dons, null, 4));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "quanlydon_backup_" + new Date().toISOString().slice(0, 10) + ".json");
-            document.body.appendChild(downloadAnchorNode); 
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        /**
-         * Hàm tạo nội dung đề xuất (chỉ dùng cho mục đích xem trước)
-         */
-        function generateProposalContent(don) {
-            let content = `VIỆN KIỂM SÁT NHÂN DÂN THÀNH PHỐ CẦN THƠ\n\n`;
-            content += `ĐƠN VỊ XỬ LÝ: ${don.createdByUnit || 'Không rõ'}\n`;
-            content += `NGƯỜI LẬP: ${don.can_bo_phan_cong || don.lastUpdatedBy || 'Không rõ'}\n`;
-            content += `CHỨC DANH: ${don.chuc_danh || 'Không rõ'}\n`;
-            content += `-----------------------------------------------------------\n\n`;
-            
-            content += `V/v: Xử lý đơn ${don.phan_loai || 'Không rõ loại'} của ${don.ho_ten || 'Không rõ tên'}\n`;
-            content += `Địa chỉ: ${don.dia_chi || 'Không rõ'}\n`;
-            content += `Ngày nhận đơn: ${don.ngay_nhan || 'Không rõ'}\n`;
-            content += `Nguồn đơn: ${don.nguon_don || 'Không rõ'}\n\n`;
-            
-            content += `NỘI DUNG TÓM TẮT:\n${don.noi_dung || 'Chưa có nội dung'}\n\n`;
-
-            if (don.can_cu && don.can_cu.length > 0) {
-                 content += `CĂN CỨ:\n`;
-                 don.can_cu.forEach((cc, idx) => {
-                     const parts = [
-                         cc.diem ? `Điểm ${cc.diem}` : '',
-                         cc.khoan ? `Khoản ${cc.khoan}` : '',
-                         cc.dieu ? `Điều ${cc.dieu}` : ''
-                     ].filter(Boolean).join(', ');
-                     
-                     const partText = parts ? `Căn cứ ${parts}` : 'Căn cứ';
-                     
-                     content += `${idx + 1}. ${partText} ${cc.van_ban ? `của ${cc.van_ban}` : ''}\n`;
-                 });
-                 content += '\n';
+            if (dons.length === 0) {
+                 return alert("Không có dữ liệu đơn để sao lưu!");
             }
-            
-            content += `ĐỀ XUẤT XỬ LÝ:\n${don.de_xuat || 'Chưa có đề xuất'}\n\n`;
-            content += `KẾT QUẢ XỬ LÝ (Nếu đã có):\n${don.ket_qua || 'Chưa có kết quả'}\n\n`;
-            
-            content += `CHUYỂN ĐẾN: ${don.chuyen_den || 'Không rõ'}\n`;
-            content += `Ngày chuyển đơn: ${don.ngay_chuyen_don || 'Không rõ'}\n`;
-            
-            return content;
+            const dataString = JSON.stringify(dons, null, 2);
+            const blob = new Blob([dataString], { type: "application/json" });
+            saveAs(blob, `DONS_BACKUP_${new Date().toISOString().slice(0, 10)}.json`);
         }
         
-        /**
-         * HÀM CHÍNH: Tạo file Word (.doc) theo Mẫu số 07/KT với định dạng chuẩn (ĐÃ SỬA PHẦN CĂN CỨ)
-         */
-        function downloadResolutionResultDoc(id) {
-             if (!id) {
-                alert('Vui lòng chọn một đơn trong danh sách (click vào hàng) để trích xuất.');
-                return;
-            }
-            
-            const don = dons.find(d => d.id === id);
-            if (!don) return alert('Không tìm thấy đơn.');
-            
-            // --- XỬ LÝ DỮ LIỆU ĐƠN ---
-            const now = new Date();
-            const year = now.getFullYear();
-            
-            // Format ngày nhận đơn
-            let ngayNhanText = don.ngay_nhan || '...';
-            if (ngayNhanText !== '...') {
-                 const [y, m, d] = ngayNhanText.split('-');
-                 ngayNhanText = `${d}/${m}/${y}`;
-            }
-            
-            // Format ngày ghi đơn
-            let ngayGhiText = don.ngay_ghi || '...';
-            if (ngayGhiText !== '...') {
-                 const [y, m, d] = ngayGhiText.split('-');
-                 ngayGhiText = `${d}/${m}/${y}`;
-            }
-            
-            // Format căn cứ (NEW STRUCTURE)
-            let canCuText = '';
-            if (don.can_cu && don.can_cu.length > 0) {
-                don.can_cu.forEach((cc) => {
-                    const parts = [
-                        cc.diem ? `Điểm ${cc.diem}` : '',
-                        cc.khoan ? `Khoản ${cc.khoan}` : '',
-                        cc.dieu ? `Điều ${cc.dieu}` : ''
-                    ].filter(Boolean).join(', ');
-                    
-                    const partText = parts ? `${parts}` : 'Quy định';
-                    const vanBanText = cc.van_ban || 'Văn bản...';
-                    
-                    // Thêm khoảng cách đầu dòng và dấu chấm
-                    canCuText += `&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;- ${partText} của ${vanBanText}.<br>`;
-                });
-            }
-            
-            // Định dạng ngày/tháng/năm
-            function formatDate(isoDate) {
-                if (!isoDate) return '...';
-                const [y, m, d] = isoDate.split('-');
-                return `${d} tháng ${m} năm ${y}`;
-            }
+        function getDonDetails(id) {
+             const don = dons.find(d => d.id === id);
+             if (!don) return null;
+             
+             // Xử lý căn cứ để hiển thị đẹp
+             const canCuText = (don.can_cu || [])
+                 .filter(c => c.diem || c.khoan || c.dieu || c.van_ban)
+                 .map(c => {
+                     let parts = [];
+                     if (c.diem) parts.push(`điểm ${c.diem}`);
+                     if (c.khoan) parts.push(`khoản ${c.khoan}`);
+                     if (c.dieu) parts.push(`Điều ${c.dieu}`);
+                     if (c.van_ban) parts.push(`Văn bản: ${c.van_ban}`);
+                     return parts.join(' ') + '. ';
+                 })
+                 .join('\n');
+             
+             return {
+                 ...don,
+                 canCuText: canCuText,
+                 ngayNhanFormatted: formatDate(don.ngay_nhan),
+                 ngayGhiFormatted: formatDate(don.ngay_ghi)
+             };
+        }
 
-            // --- CẤU TRÚC HTML CHO FILE WORD ---
+
+        // --- CHỨC NĂNG XUẤT PHIẾU ĐỀ XUẤT (MẪU 07/KT) - DỰA TRÊN MẪU CŨ VÀ CÓ CHỈNH SỬA
+        function downloadProposalDoc(id) {
+            if (!id) return alert("Vui lòng chọn một đơn trong danh sách để xuất Phiếu Đề Xuất.");
+            
+            const don = getDonDetails(id);
+            if (!don) return alert('Không tìm thấy dữ liệu đơn.');
+            if (!don.de_xuat) return alert('Trường "Đề xuất" đang trống. Vui lòng nhập thông tin đề xuất trước khi xuất Phiếu.');
+
+            const today = new Date();
+            const year = today.getFullYear();
+            const dateParts = don.ngay_nhan.split('-'); // Format YYYY-MM-DD
+            const ngayNhan = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            
+            const canBo = don.can_bo_phan_cong || '...........................................';
+            const chucDanh = don.chuc_danh === 'Chọn' ? '...........................................' : don.chuc_danh;
+            const ngayGhi = don.ngayGhiFormatted || '..../..../....';
+            const nguonDon = don.nguon_don === 'Chọn' ? '...........................................' : don.nguon_don;
+
+            const content = `
+                <div style="width: 100%; font-family: 'Times New Roman', serif; font-size: 14pt;">
+                    <table style="width: 100%; border: none;">
+                        <tr>
+                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold;">VIỆN KIỂM SÁT NHÂN DÂN</p>
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold;">THÀNH PHỐ CẦN THƠ</p>
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold; border-bottom: 1px solid black; display: inline-block;">THANH TRA - KHIẾU TỐ</p>
+                            </td>
+                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                                <p style="margin: 0; font-size: 14pt; border-bottom: 1px solid black; display: inline-block; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</p>
+                                <p style="margin: 10px 0 0 0; font-style: italic; font-size: 14pt;">Cần Thơ, ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${year}</p>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <p style="text-align: right; margin: 20px 0 5px 0; font-size: 12pt;">
+                        <span style="border: 1px solid black; padding: 2px 5px;">Mẫu số 07/KT</span><br>
+                        <span style="font-size: 12pt;">(Theo QĐ số 28/QĐ-VKSTC ngày 15/02/2023)</span>
+                    </p>
+                    
+                    <h3 style="text-align: center; font-size: 16pt; margin: 10px 0 20px 0;">PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</h3>
+
+                    <p style="margin: 0 0 10px 0;">
+                        <span style="font-size: 14pt; font-weight: bold;">Kính gửi:</span>
+                        <span style="font-size: 14pt;">- Lãnh đạo Viện;</span>
+                    </p>
+                    <p style="margin: 0 0 20px 0; padding-left: 80px;">
+                        <span style="font-size: 14pt;">- Lãnh đạo Thanh tra - Khiếu tố.</span>
+                    </p>
+
+                    <p style="margin: 5px 0;">
+                        Tôi tên: <span style="font-weight: bold;">${canBo}</span>, chức danh: <span style="font-weight: bold;">${chucDanh}</span>.
+                    </p>
+                    <p style="margin: 5px 0;">
+                        Được phân công nghiên cứu, đề xuất xử lý đối với đơn của
+                        <span style="font-weight: bold;">${don.ho_ten}</span>,
+                        địa chỉ: <span style="font-weight: bold;">${don.dia_chi}</span>,
+                        ghi ngày <span style="font-weight: bold;">${ngayGhi}</span>,
+                        Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày <span style="font-weight: bold;">${don.ngayNhanFormatted}</span>
+                        do <span style="font-weight: bold;">${nguonDon}</span> chuyển đến.
+                    </p>
+                    
+                    <p style="margin: 10px 0;">
+                        <span style="font-weight: bold;">Nội dung đơn:</span> 
+                        <span style="white-space: pre-wrap; display: block; padding-left: 20px;">${don.noi_dung}</span>
+                    </p>
+                    
+                    <p style="margin: 10px 0;">
+                        <span style="font-weight: bold;">Theo quy định tại:</span><br>
+                        <span style="white-space: pre-wrap; display: block; padding-left: 20px;">${don.canCuText.trim() || '....................................................................................................................................................................................................................................................................................................................................................'}</span>
+                    </p>
+
+                    <p style="margin: 20px 0 10px 0;">
+                        <span style="font-weight: bold; text-decoration: underline;">Đề xuất:</span> 
+                        <span style="white-space: pre-wrap; display: block; padding-left: 20px;">${don.de_xuat}</span>
+                    </p>
+                    
+                    <table style="width: 100%; border: none; margin-top: 50px;">
+                        <tr>
+                            <td style="width: 33%; text-align: center; vertical-align: top; border: none; padding: 0;">
+                                <p style="font-weight: bold; margin: 0; font-size: 14pt;">PHÊ DUYỆT CỦA LÃNH ĐẠO VIỆN</p>
+                                <p style="font-style: italic; margin: 0; font-size: 12pt;">(Ký, ghi rõ họ tên)</p>
+                            </td>
+                            <td style="width: 33%; text-align: center; vertical-align: top; border: none; padding: 0;">
+                                <p style="font-weight: bold; margin: 0; font-size: 14pt;">LÃNH ĐẠO ĐƠN VỊ ĐỀ XUẤT</p>
+                                <p style="font-style: italic; margin: 0; font-size: 12pt;">(Ký, ghi rõ họ tên)</p>
+                            </td>
+                            <td style="width: 33%; text-align: center; vertical-align: top; border: none; padding: 0;">
+                                <p style="font-weight: bold; margin: 0; font-size: 14pt;">NGƯỜI ĐỀ XUẤT</p>
+                                <p style="font-style: italic; margin: 0; font-size: 12pt;">(Ký, ghi rõ họ tên)</p>
+                                <br><br><br><br>
+                                <p style="font-weight: bold; margin: 0; font-size: 14pt;">${canBo}</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+            
+            // Hàm xuất DOCX/HTML đã được định nghĩa ở bước trước, sử dụng lại
+            const filename = `Phiếu Đề Xuất - ${don.ho_ten}.doc`;
             const htmlContent = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                    <head>
-                        <meta charset="utf-8">
-                        <title>Phiếu Đề Xuất Xử Lý Đơn</title>
-                        <style>
-                            /* --- ĐỊNH DẠNG CHUNG (Áp dụng cho A4, Times New Roman 14) --- */
-                            @page
-                            {
-                                size: A4; 
-                                margin: 2.0cm 1.5cm 2.0cm 3.0cm; /* Trên, Phải, Dưới, Trái */
-                                mso-header-margin: 1.0cm; 
-                                mso-footer-margin: 1.0cm;
-                                mso-page-orientation: portrait;
-                            }
-                            
-                            body
-                            {
-                                font-family: 'Times New Roman', serif; 
-                                font-size: 14pt; 
-                                margin: 0; 
-                                padding: 0;
-                            }
-                            
-                            p
-                            {
-                                font-family: 'Times New Roman', serif;
-                                font-size: 14pt;
-                                margin: 0;
-                                padding: 0;
-                                line-height: 1.3; /* Giãn dòng 1.3pt */
-                                text-align: justify;
-                            }
-
-                            /* --- ĐỊNH DẠNG ĐẶC BIỆT --- */
-                            .center { text-align: center; }
-                            .right { text-align: right; }
-                            .bold { font-weight: bold; }
-                            .uppercase { text-transform: uppercase; }
-                            .indent { text-indent: 1cm; } /* Đầu dòng cách lề 1cm */
-                            .no-indent { text-indent: 0; }
-                            .single-line { line-height: 1.0; }
-                            .margin-top { margin-top: 10pt; }
-                        </style>
-                    </head>
-                    <body>
-                    
-                        <p class="right single-line bold">
-                            Mẫu số 07/KT <br>
-                            <span style="font-style: italic;">(Theo QĐ số 28/QĐ-VKSTC ngày 15/02/2023)</span>
-                        </p>
-                        
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 15pt;">
-                            <tr>
-                                <td style="width: 50%; text-align: center; border: none;">
-                                    <p class="bold uppercase single-line">VIỆN KIỂM SÁT NHÂN DÂN</p>
-                                    <p class="bold uppercase single-line">THÀNH PHỐ CẦN THƠ</p>
-                                    <p class="bold uppercase single-line"><u>THANH TRA - KHIẾU TỐ</u></p>
-                                </td>
-                                <td style="width: 50%; text-align: center; border: none;">
-                                    <p class="bold uppercase single-line">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
-                                    <p class="bold single-line"><u>Độc lập - Tự do - Hạnh phúc</u></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="width: 50%; border: none;"></td>
-                                <td style="width: 50%; text-align: center; border: none; font-style: italic; padding-top: 10pt;">
-                                    <p>Cần Thơ, ngày ... tháng ... năm ${year}</p>
-                                </td>
-                            </tr>
-                        </table>
-                        
-                        <p class="no-indent bold center uppercase margin-top">PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</p>
-                        <p class="no-indent bold margin-top">Kính gửi:</p>
-                        <p class="no-indent">
-                            &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;- Lãnh đạo Viện;<br>
-                            &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;- Lãnh đạo Thanh tra - Khiếu tố.
-                        </p>
-
-                        <p class="indent margin-top">
-                            Tôi tên: <span class="bold">${don.can_bo_phan_cong || '..................'}</span>, chức danh: <span class="bold">${don.chuc_danh || '..................'}</span>;
-                        </p>
-                        <p class="indent">
-                            Được phân công nghiên cứu, đề xuất xử lý đối với đơn của <span class="bold">${don.ho_ten || '..................'}</span>, địa chỉ: <span class="bold">${don.dia_chi || '..................'}</span>, ghi ngày ${ngayGhiText} (Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày ${ngayNhanText} do ${don.nguon_don || '..................'} chuyển đến).
-                        </p>
-                        <p class="indent">
-                            Nội dung đơn: <span class="bold">${don.noi_dung || '..................'}</span>.
-                        </p>
-                        
-                        <p class="indent">
-                            Theo quy định tại điểm ... Khoản ... Điều ... Quy chế tiếp công dân, giải quyết khiếu nại, tố cáo và kiểm sát việc giải quyết khiếu nại, tố cáo trong hoạt động tư pháp (ban hành kèm theo Quyết định số: 222/QĐ-VKSTC ngày 22/6/2023), Đơn nêu trên thuộc <span class="bold">${don.tham_quyen || '..................'}</span>.
-                        </p>
-                        
-                        <p class="no-indent margin-top">
-                           <span class="indent">Căn cứ:</span><br>
-                           ${canCuText || '&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;..................................................................'}
-                        </p>
-                        
-                        <p class="indent margin-top">
-                            Tôi xin đề xuất: <span class="bold">${don.de_xuat || '..................'}</span>./.
-                        </p>
-                        
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 30pt;">
-                            <tr>
-                                <td style="width: 40%; text-align: center; border: none;">
-                                    <p class="bold center single-line">Phê duyệt của Lãnh đạo Viện</p>
-                                    <p class="bold center uppercase single-line">VIỆN TRƯỞNG</p>
-                                    <p class="bold center" style="margin-top: 50pt;">Nguyễn Thanh Liêm</p>
-                                </td>
-                                <td style="width: 30%; text-align: center; border: none;">
-                                    <p class="bold center single-line">Lãnh đạo đơn vị đề xuất</p>
-                                    <p class="bold center uppercase single-line">PHÓ CHÁNH THANH TRA</p>
-                                    <p class="bold center" style="margin-top: 50pt;">..................</p>
-                                </td>
-                                <td style="width: 30%; text-align: center; border: none;">
-                                     <p class="bold center single-line">Ngày ... tháng ... năm ${year}</p>
-                                     <p class="bold center single-line">Người đề xuất</p>
-                                     <p class="bold center" style="margin-top: 50pt;">${don.can_bo_phan_cong || '..................'}</p>
-                                </td>
-                            </tr>
-                        </table>
-                        
-                    </body>
+                <html xmlns:v="urn:schemas-microsoft-com:vml"
+                xmlns:o="urn:schemas-microsoft-com:office:office"
+                xmlns:w="urn:schemas-microsoft-com:office:word"
+                xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+                xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta http-equiv=Content-Type content="text/html; charset=utf-8"></head>
+                <body style="tab-interval:36.0pt; font-family: 'Times New Roman';">
+                    <div class=WordSection1>
+                        ${content}
+                    </div>
+                </body>
                 </html>
             `;
             
-            const filename = `Trích_xuất_xử_lý_đơn_${(don.ho_ten || 'don_thu').replace(/\s/g, '_')}_${don.ngay_nhan}.doc`;
-            
-            // Dùng Blob và saveAs để lưu file
             const blob = new Blob(['\ufeff', htmlContent], {
-                type: 'application/msword'
+                type: 'application/msword;charset=utf-8',
             });
-
             saveAs(blob, filename);
         }
+        
+        // --- CHỨC NĂNG XUẤT TRÍCH XUẤT KẾT QUẢ XỬ LÝ ĐƠN (MẪU MỚI) ---
+        function downloadResultExtractionDoc(id) {
+            if (!id) return alert("Vui lòng chọn một đơn trong danh sách để xuất Trích Xuất Kết Quả.");
+            
+            const don = getDonDetails(id);
+            if (!don) return alert('Không tìm thấy dữ liệu đơn.');
+            if (!don.ket_qua) return alert('Trường "Kết quả" đang trống. Vui lòng nhập thông tin kết quả xử lý trước khi xuất Trích Xuất.');
 
+            const today = new Date();
+            const year = today.getFullYear();
+            const day = today.getDate();
+            const month = today.getMonth() + 1;
+            
+            const ngayXuLy = don.ngay_chuyen_don ? formatDate(don.ngay_chuyen_don) : '..../..../....';
+            const canBo = don.can_bo_phan_cong || '...........................................';
+            const nguonDon = don.nguon_don === 'Chọn' ? '...........................................' : don.nguon_don;
+            
+            // Xử lý Căn cứ
+            const canCuDiemKhoanDieu = (don.can_cu || [])
+                 .map(c => 
+                     `${c.diem ? `điểm ${c.diem}` : ''} ${c.khoan ? `khoản ${c.khoan}` : ''} ${c.dieu ? `Điều ${c.dieu}` : ''}`.trim()
+                 )
+                 .filter(text => text.length > 0)
+                 .join('; ');
+                 
+            const canCuVanBan = (don.can_cu || [])
+                 .map(c => c.van_ban)
+                 .filter(text => text && text.length > 0)
+                 .join('; ');
+            
+            const canCuTextFormatted = `
+                <span style="font-weight: bold;">${canCuDiemKhoanDieu}</span>. Văn bản: <span style="font-weight: bold;">${canCuVanBan || '...........................................'}</span>
+            `.trim();
+
+
+            const content = `
+                <div style="width: 100%; font-family: 'Times New Roman', serif; font-size: 14pt;">
+                    <table style="width: 100%; border: none;">
+                        <tr>
+                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold;">VIỆN KIỂM SÁT NHÂN DÂN</p>
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold;">THÀNH PHỐ CẦN THƠ</p>
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold; border-bottom: 1px solid black; display: inline-block;">THANH TRA - KHIẾU TỐ</p>
+                            </td>
+                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
+                                <p style="margin: 0; font-size: 14pt; font-weight: bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                                <p style="margin: 0; font-size: 14pt; border-bottom: 1px solid black; display: inline-block; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</p>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <h2 style="text-align: center; font-size: 16pt; margin: 30px 0 20px 0; text-transform: uppercase;">TRÍCH XUẤT KẾT QUẢ XỬ LÝ ĐƠN</h2>
+
+                    <p style="margin: 10px 0 5px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block;">Đơn của:</span>
+                        <span style="font-weight: bold;">${don.ho_ten}</span>
+                    </p>
+                    <p style="margin: 5px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block;">Địa chỉ:</span>
+                        <span style="font-weight: bold;">${don.dia_chi}</span>
+                    </p>
+                    <p style="margin: 5px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block;">Đơn ghi ngày:</span>
+                        <span style="font-weight: bold;">${don.ngayGhiFormatted || '..../..../....'}</span>
+                    </p>
+                    <p style="margin: 5px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block;">Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày:</span>
+                        <span style="font-weight: bold;">${don.ngayNhanFormatted}</span>
+                    </p>
+                    <p style="margin: 5px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block;">Nguồn đơn:</span>
+                        <span style="font-weight: bold;">${nguonDon}</span>
+                    </p>
+                    <p style="margin: 10px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block; vertical-align: top;">Nội dung đơn:</span>
+                        <span style="font-weight: bold; display: inline-block; width: calc(100% - 260px); white-space: pre-wrap; vertical-align: top; border-bottom: 1px dashed black; padding-bottom: 5px;">${don.noi_dung}</span>
+                    </p>
+                    <p style="margin: 10px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block; vertical-align: top;">Căn cứ tại:</span>
+                        <span style="display: inline-block; width: calc(100% - 260px); white-space: pre-wrap; vertical-align: top;">${canCuTextFormatted}</span>
+                    </p>
+
+                    <p style="margin: 20px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block; vertical-align: top;">Đơn nêu trên đã được xử lý:</span>
+                        <span style="font-weight: bold; display: inline-block; width: calc(100% - 260px); white-space: pre-wrap; vertical-align: top; border: 1px solid black; padding: 10px;">${don.ket_qua}</span>
+                    </p>
+                    <p style="margin: 5px 0;">
+                        <span style="font-weight: bold; width: 250px; display: inline-block;">Ngày xử lý:</span>
+                        <span style="font-weight: bold;">${ngayXuLy}</span>
+                    </p>
+                    
+                    <table style="width: 100%; border: none; margin-top: 50px;">
+                        <tr>
+                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
+                                <p style="font-style: italic; margin: 0; font-size: 14pt;"></p>
+                            </td>
+                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
+                                <p style="font-style: italic; margin: 0; font-size: 14pt;">Cần Thơ, ngày ${day} tháng ${month} năm ${year}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 50%; text-align: center; vertical-align: top; border: none; padding: 0;">
+                                <p style="font-weight: bold; margin: 0; font-size: 14pt;">LÃNH ĐẠO THANH TRA - KHIẾU TỐ</p>
+                                <p style="font-style: italic; margin: 0; font-size: 12pt;">(Ký, ghi rõ họ tên)</p>
+                            </td>
+                            <td style="width: 50%; text-align: center; vertical-align: top; border: none; padding: 0;">
+                                <p style="font-weight: bold; margin: 0; font-size: 14pt;">CÁN BỘ TRÍCH XUẤT</p>
+                                <p style="font-style: italic; margin: 0; font-size: 12pt;">(Ký, ghi rõ họ tên)</p>
+                                <br><br><br><br>
+                                <p style="font-weight: bold; margin: 0; font-size: 14pt;">${canBo}</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+            
+            const filename = `Trích Xuất Kết Quả - ${don.ho_ten}.doc`;
+            const htmlContent = `
+                <html xmlns:v="urn:schemas-microsoft-com:vml"
+                xmlns:o="urn:schemas-microsoft-com:office:office"
+                xmlns:w="urn:schemas-microsoft-com:office:word"
+                xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+                xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta http-equiv=Content-Type content="text/html; charset=utf-8"></head>
+                <body style="tab-interval:36.0pt; font-family: 'Times New Roman';">
+                    <div class=WordSection1>
+                        ${content}
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const blob = new Blob(['\ufeff', htmlContent], {
+                type: 'application/msword;charset=utf-8',
+            });
+            saveAs(blob, filename);
+        }
         
         // --- INITIALIZATION ---
         
@@ -1922,115 +1788,47 @@
             document.getElementById("ngay_nhan").value = new Date().toISOString().slice(0, 10);
             document.getElementById('new-role').onchange = capNhatDonViTheoVaiTro;
             capNhatDonViTheoVaiTro();
-            // Khởi tạo Căn cứ với cấu trúc mới
-            document.getElementById('can_cu_container').innerHTML = '';
-            document.getElementById('sua-can_cu_container').innerHTML = '';
             populateCanCuFields([], '');
             populateCanCuFields([], 'sua-');
             
-            setupEnterKeyListener(); 
+            setupEnterKeyListener(); // Đã thêm ở lần chỉnh sửa trước
             
             const accountBtn = document.getElementById('account-btn');
             if (accountBtn) {
                 accountBtn.style.display = 'none'; // Ẩn nút quản lý TK khi chưa đăng nhập
             }
+            
+            // Tự động chọn giá trị mặc định cho phân loại/thẩm quyền ở form nhập đơn mới
+            document.getElementById('phan_loai').value = 'Khiếu nại';
+            document.getElementById('tham_quyen').value = 'Thuộc thẩm quyền giải quyết';
+
         }
         
+        // Thêm tính năng nghe phím Enter cho đăng nhập
         function setupEnterKeyListener() {
-             // 1. Thêm sự kiện nhấn Enter cho ô Đăng nhập
+             const usernameInput = document.getElementById('username');
              const passwordInput = document.getElementById('password');
+             
+             if (usernameInput) {
+                 usernameInput.addEventListener('keydown', function(event) {
+                     if (event.key === 'Enter') {
+                         event.preventDefault(); // Ngăn chặn form submit mặc định
+                         login();
+                     }
+                 });
+             }
              if (passwordInput) {
-                passwordInput.addEventListener('keyup', function(event) {
-                    if (event.key === 'Enter') {
-                        // Ngăn chặn hành vi mặc định (như gửi form nếu là form)
-                        event.preventDefault(); 
-                        login();
-                    }
-                });
-             }
-             
-             // 2. Thêm sự kiện nhấn Enter cho ô Tìm kiếm
-             const searchText = document.getElementById('search-text');
-             if (searchText) {
-                 searchText.addEventListener('keyup', function(event) {
-                    if (event.key === 'Enter') {
-                        filterTable();
-                    }
+                 passwordInput.addEventListener('keydown', function(event) {
+                     if (event.key === 'Enter') {
+                         event.preventDefault(); // Ngăn chặn form submit mặc định
+                         login();
+                     }
                  });
              }
-             
-             // 3. Thêm sự kiện thay đổi cho ô ngày tìm kiếm (Giữ nguyên)
-             const searchDate = document.getElementById('search-date');
-             if (searchDate) {
-                 searchDate.addEventListener('change', function(event) {
-                    filterTable();
-                 });
-             }
-        }
-        
-        function initSelectOptions() {
-            // Hàm khởi tạo các dropdown list
-            function populateSelect(id, data) {
-                const select = document.getElementById(id);
-                if (!select) return;
-                select.innerHTML = '';
-                 // Thêm tùy chọn mặc định (nếu cần)
-                if (id === 'phan_loai' || id === 'sua-phan_loai') {
-                    // Phân loại đã được thêm sẵn trong HTML
-                } else if (id === 'tham_quyen' || id === 'sua-tham_quyen') {
-                    // Thẩm quyền đã được thêm sẵn trong HTML
-                } else if (id === 'chuc_danh' || id === 'sua-chuc_danh') {
-                    // Chức danh đã được thêm sẵn trong HTML
-                } else {
-                     let defaultOption = document.createElement('option');
-                     defaultOption.value = '';
-                     defaultOption.textContent = '--Chọn--';
-                     select.appendChild(defaultOption);
-                }
-
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item;
-                    option.textContent = item;
-                    select.appendChild(option);
-                });
-            }
-
-            populateSelect('nguon_don', lookupData['Nguồn đơn']);
-            populateSelect('chuyen_den', lookupData['Chuyển đến']);
-            populateSelect('sua-nguon_don', lookupData['Nguồn đơn']);
-            populateSelect('sua-chuyen_den', lookupData['Chuyển đến']);
-            // Đơn vị chỉ dùng cho tạo tài khoản mới, được populate trong capNhatDonViTheoVaiTro()
-        }
-        
-        // Tạo Modal Proposal (Đề xuất/Xử lý)
-        function createProposalModal() {
-            const modal = document.createElement('div');
-            modal.id = 'proposalModal';
-            modal.className = 'modal';
-             // Lấy nội dung từ HTML bên ngoài để tránh bị mất
-             const contentHtml = `
-                <div class="modal-content large-modal">
-                    <span class="close-btn" onclick="document.getElementById('proposalModal').style.display='none'">&times;</span>
-                    <h3>Trích xuất Đề xuất/Xử lý đơn</h3>
-                    <div style="border: 1px solid #ccc; padding: 15px; background-color: #f9f9f9; max-height: 70vh; overflow-y: auto;">
-                        <pre id="proposal-content"></pre>
-                    </div>
-                    <div class="btn-container">
-                        <button class="export-proposal-btn" onclick="downloadResolutionResultDoc(currentSelectedId)">Xuất File Word (.doc)</button>
-                    </div>
-                </div>
-            `;
-            modal.innerHTML = contentHtml;
-            document.body.appendChild(modal);
         }
         
         // Gọi hàm khởi tạo khi trang tải xong
-        document.addEventListener('DOMContentLoaded', () => {
-             createProposalModal();
-             init();
-        });
-
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
