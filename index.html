@@ -486,7 +486,7 @@
                     <button onclick="exportList()">Xuất Danh sách đơn</button>
                     <button onclick="exportReport()">Xuất báo cáo</button>
                     <button onclick="downloadJSON()">Sao lưu JSON</button>
-                    <button class="export-btn" onclick="downloadResolutionResultDoc(currentSelectedId)">Trích xuất kết quả xử lý đơn</button>
+                    <button class="export-btn proposal-print-btn" onclick="showProposalModal(currentSelectedId)">Trích xuất Đề xuất/Xử lý (Đơn đã chọn)</button> 
                 </div>
             <div class="search-bar" style="margin-bottom: 20px;">
                 <input type="text" id="search-text" placeholder="Tìm kiếm theo Họ tên/Cơ quan/Tổ chức..." style="padding: 8px; width: 40%; border: 1px solid #ccc; border-radius: 4px;">
@@ -678,7 +678,7 @@
      <div id="proposalModal" class="modal">
         <div class="modal-content large-modal">
             <span class="close-btn" onclick="document.getElementById('proposalModal').style.display='none'">&times;</span>
-            <h3>Trích xuất Đề xuất/Xử lý đơn</h3>
+            <h3>Xem trước Đề xuất/Xử lý đơn</h3>
             <div style="border: 1px solid #ccc; padding: 15px; background-color: #f9f9f9; max-height: 70vh; overflow-y: auto;">
                 <pre id="proposal-content"></pre>
             </div>
@@ -1233,17 +1233,29 @@
         // --- CĂN CỨ FUNCTIONS ---
         function addCanCu(prefix = '') {
             const container = document.getElementById(prefix + 'can_cu_container');
-            const index = container.children.length;
-
+            // Đếm số lượng phần tử con hiện có để xác định index mới
+            let maxIndex = -1;
+            for (let i = 0; i < container.children.length; i++) {
+                const idAttr = container.children[i].id;
+                const match = idAttr.match(/_(\d+)$/);
+                if (match) {
+                    const index = parseInt(match[1]);
+                    if (index > maxIndex) {
+                        maxIndex = index;
+                    }
+                }
+            }
+            const newIndex = maxIndex + 1;
+            
             const div = document.createElement('div');
             div.className = 'can-cu-item';
-            div.id = prefix + 'can_cu_item_' + index;
+            div.id = prefix + 'can_cu_item_' + newIndex;
             div.innerHTML = `
-                <input type="text" id="${prefix}loai_vb_${index}" placeholder="Loại VB">
-                <input type="text" id="${prefix}so_vb_${index}" placeholder="Số VB">
-                <input type="date" id="${prefix}ngay_vb_${index}" placeholder="Ngày VB">
-                <input type="text" id="${prefix}co_quan_ban_hanh_${index}" placeholder="Cơ quan ban hành">
-                <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_item_${index}')">Xóa</button>
+                <input type="text" id="${prefix}loai_vb_${newIndex}" placeholder="Loại VB">
+                <input type="text" id="${prefix}so_vb_${newIndex}" placeholder="Số VB">
+                <input type="date" id="${prefix}ngay_vb_${newIndex}" placeholder="Ngày VB">
+                <input type="text" id="${prefix}co_quan_ban_hanh_${newIndex}" placeholder="Cơ quan ban hành">
+                <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_item_${newIndex}')">Xóa</button>
             `;
             container.appendChild(div);
         }
@@ -1259,20 +1271,35 @@
             const container = document.getElementById(prefix + 'can_cu_container');
             const canCuList = [];
             
-            for (let i = 0; i < container.children.length; i++) {
-                const item = container.children[i];
-                // Sử dụng optional chaining (?.) để tránh lỗi nếu trường không tồn tại
-                const loai_vb = item.querySelector(`#${prefix}loai_vb_${i}`)?.value || '';
-                const so_vb = item.querySelector(`#${prefix}so_vb_${i}`)?.value || '';
-                const ngay_vb = item.querySelector(`#${prefix}ngay_vb_${i}`)?.value || '';
-                const co_quan_ban_hanh = item.querySelector(`#${prefix}co_quan_ban_hanh_${i}`)?.value || '';
+            // Lấy tất cả các input fields trong container, sắp xếp theo ID để đảm bảo thứ tự
+            const inputElements = Array.from(container.querySelectorAll('.can-cu-item')).map(item => {
+                 // Lấy index từ ID của item div
+                 const match = item.id.match(/_(\d+)$/);
+                 const index = match ? parseInt(match[1]) : -1;
+                 
+                 return {
+                     index: index,
+                     loai_vb: item.querySelector(`input[id^="${prefix}loai_vb_"]`)?.value || '',
+                     so_vb: item.querySelector(`input[id^="${prefix}so_vb_"]`)?.value || '',
+                     ngay_vb: item.querySelector(`input[id^="${prefix}ngay_vb_"]`)?.value || '',
+                     co_quan_ban_hanh: item.querySelector(`input[id^="${prefix}co_quan_ban_hanh_"]`)?.value || ''
+                 };
+            }).filter(item => item.index !== -1).sort((a, b) => a.index - b.index);
 
-                if (loai_vb || so_vb || ngay_vb || co_quan_ban_hanh) {
-                    canCuList.push({ loai_vb, so_vb, ngay_vb, co_quan_ban_hanh });
+            inputElements.forEach(item => {
+                if (item.loai_vb || item.so_vb || item.ngay_vb || item.co_quan_ban_hanh) {
+                    canCuList.push({ 
+                        loai_vb: item.loai_vb, 
+                        so_vb: item.so_vb, 
+                        ngay_vb: item.ngay_vb, 
+                        co_quan_ban_hanh: item.co_quan_ban_hanh 
+                    });
                 }
-            }
+            });
+
             return canCuList;
         }
+
 
         function populateCanCuFields(canCuData, prefix = '') {
             const container = document.getElementById(prefix + 'can_cu_container');
@@ -1282,7 +1309,8 @@
                 canCuData.forEach((item, index) => {
                     const div = document.createElement('div');
                     div.className = 'can-cu-item';
-                    div.id = prefix + 'can_cu_item_' + index;
+                    // Dùng index trực tiếp làm ID tạm thời cho modal
+                    div.id = prefix + 'can_cu_item_' + index; 
                     div.innerHTML = `
                         <input type="text" id="${prefix}loai_vb_${index}" placeholder="Loại VB" value="${item.loai_vb || ''}">
                         <input type="text" id="${prefix}so_vb_${index}" placeholder="Số VB" value="${item.so_vb || ''}">
@@ -1292,9 +1320,9 @@
                     `;
                     container.appendChild(div);
                 });
-            } else {
-                 addCanCu(prefix); // Luôn có ít nhất 1 dòng trống
-            }
+            } 
+            // Luôn thêm một dòng trống nếu không có dữ liệu hoặc để cho người dùng thêm mới
+            addCanCu(prefix); 
         }
 
 
@@ -1417,29 +1445,42 @@
                 const actionsCell = row.insertCell();
                 actionsCell.classList.add('table-actions');
                 
-                // Quyền sửa/xóa
-                const canModify = canEditDelete(don);
+                // Quyền sửa/xóa - Giao diện không disable, chỉ kiểm tra khi click
+                const canModify = canEditDelete(don); // Vẫn tính toán để làm cơ sở cho việc tô màu/style nếu muốn
                 
                 actionsCell.innerHTML = `
-                    <button class="edit-btn" onclick="editDon('${don.id}')" ${canModify ? '' : 'disabled'}>Sửa</button>
-                    <button class="delete-btn" onclick="deleteDon('${don.id}')" ${canModify ? '' : 'disabled'}>Xóa</button>
+                    <button class="edit-btn" onclick="editDon('${don.id}')">Sửa</button>
+                    <button class="delete-btn" onclick="deleteDon('${don.id}')">Xóa</button>
                     <button class="proposal-print-btn" onclick="showProposalModal('${don.id}')">Đề xuất/Xử lý</button>
                 `;
 
-                // Lưu ID cho thao tác trích xuất
+                // Lưu ID cho thao tác trích xuất và highlight hàng (nếu muốn)
                 row.onclick = () => {
+                    // Xóa highlight của các hàng khác
+                    Array.from(body.children).forEach(r => r.style.backgroundColor = '');
+                    // Highlight hàng hiện tại
+                    row.style.backgroundColor = '#d1e7dd'; 
                     currentSelectedId = don.id;
                 };
             });
+            
+             // Xóa currentSelectedId nếu bảng rỗng
+            if (finalFilteredDons.length === 0) {
+                 currentSelectedId = null;
+            }
         }
         
         function showProposalModal(id) {
+            if (!id) {
+                alert('Vui lòng chọn một đơn trong danh sách (click vào hàng) để xem đề xuất/xử lý.');
+                return;
+            }
             currentSelectedId = id; // Đảm bảo ID được cập nhật cho nút export
             const don = dons.find(d => d.id === id);
             if (!don) return alert('Không tìm thấy đơn.');
 
-            const proposalContent = generateProposalContent(don, true); // true để hiển thị bản nháp HTML
-            document.getElementById('proposal-content').innerHTML = proposalContent;
+            const proposalContent = generateProposalContent(don);
+            document.getElementById('proposal-content').textContent = proposalContent;
             document.getElementById('proposalModal').style.display = 'flex';
         }
 
@@ -1546,170 +1587,223 @@
         }
 
         /**
-         * HÀM MỚI (Đã chỉnh sửa): Tạo nội dung phiếu đề xuất dưới dạng HTML theo mẫu.
-         * @param {Object} don - Dữ liệu đơn
-         * @param {boolean} isPreview - Có phải để xem trước trong modal không.
-         * @returns {string} HTML content
+         * Hàm tạo nội dung đề xuất (chỉ dùng cho mục đích xem trước)
          */
-        function generateProposalContent(don, isPreview = false) {
-             const now = new Date();
-             const day = String(now.getDate()).padStart(2, '0');
-             const month = String(now.getMonth() + 1).padStart(2, '0');
-             const year = now.getFullYear();
+        function generateProposalContent(don) {
+            let content = `VIỆN KIỂM SÁT NHÂN DÂN THÀNH PHỐ CẦN THƠ\n\n`;
+            content += `ĐƠN VỊ XỬ LÝ: ${don.createdByUnit || 'Không rõ'}\n`;
+            content += `NGƯỜI LẬP: ${don.can_bo_phan_cong || don.lastUpdatedBy || 'Không rõ'}\n`;
+            content += `CHỨC DANH: ${don.chuc_danh || 'Không rõ'}\n`;
+            content += `-----------------------------------------------------------\n\n`;
+            
+            content += `V/v: Xử lý đơn ${don.phan_loai || 'Không rõ loại'} của ${don.ho_ten || 'Không rõ tên'}\n`;
+            content += `Địa chỉ: ${don.dia_chi || 'Không rõ'}\n`;
+            content += `Ngày nhận đơn: ${don.ngay_nhan || 'Không rõ'}\n`;
+            content += `Nguồn đơn: ${don.nguon_don || 'Không rõ'}\n\n`;
+            
+            content += `NỘI DUNG TÓM TẮT:\n${don.noi_dung || 'Chưa có nội dung'}\n\n`;
 
-             const ngayNhan = don.ngay_nhan ? don.ngay_nhan.split('-').reverse().join('/') : '.../.../...';
-             const ngayGhi = don.ngay_ghi ? don.ngay_ghi.split('-').reverse().join('/') : '.../.../...';
-             const ngayHienTai = `ngày ${day} tháng ${month} năm ${year}`;
-             
-             // Xử lý Căn cứ
-             let canCuHTML = '';
-             if (don.can_cu && don.can_cu.length > 0) {
-                 canCuHTML = don.can_cu.map((cc, idx) => {
-                     return `<p style="text-indent: 1cm; margin: 0; padding: 0;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${idx + 1}. ${cc.loai_vb || 'Văn bản'} số ${cc.so_vb || '...'} ngày ${cc.ngay_vb ? cc.ngay_vb.split('-').reverse().join('/') : '.../.../...'} của ${cc.co_quan_ban_hanh || '...'}.</p>`;
-                 }).join('');
-                 canCuHTML = `<p style="font-weight: bold; text-indent: 0; margin-top: 10px;">CĂN CỨ:</p>${canCuHTML}`;
-             }
-             
-             // Dùng cấu trúc HTML để mô phỏng mẫu số 07/KT
-             let content = `
-                <div style="width: 100%; margin-bottom: 20px;">
-                    <table style="width: 100%; border: none; font-family: 'Times New Roman', serif; font-size: 14pt;">
-                        <tr>
-                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
-                                <p style="font-weight: bold; margin: 0;">VIỆN KIỂM SÁT NHÂN DÂN</p>
-                                <p style="font-weight: bold; margin: 0; border-bottom: 1px solid black; display: inline-block; padding-bottom: 2px; width: 80%;">THÀNH PHỐ CẦN THƠ</p>
-                                <p style="font-weight: bold; margin: 0; font-size: 12pt;">THANH TRA - KHIẾU TỐ</p>
-                            </td>
-                            <td style="width: 50%; text-align: center; border: none; padding: 0;">
-                                <p style="font-weight: bold; margin: 0;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
-                                <p style="font-weight: bold; margin: 0; border-bottom: 1px solid black; display: inline-block; padding-bottom: 2px; width: 80%;">Độc lập - Tự do - Hạnh phúc</p>
-                                <p style="font-style: italic; margin-top: 5px;">Cần Thơ, ${ngayHienTai}</p>
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <div style="text-align: right; font-size: 12pt; margin-top: -80px; margin-right: 0; line-height: 1.2;">
-                         <p style="margin: 0;">Mẫu số 07/KT</p>
-                         <p style="margin: 0;">Theo QĐ số 28/QĐ-VKSTC</p>
-                         <p style="margin: 0;">ngày 15 tháng 02 năm 2023</p>
-                    </div>
-                </div>
-
-                <h3 style="text-align: center; font-weight: bold; text-transform: uppercase; margin: 40px 0 10px 0;">PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</h3>
-
-                <p style="margin: 0; padding: 0;">
-                    <span style="font-weight: bold;">Kính gửi:</span>
-                </p>
-                <p style="margin: 0; padding: 0; text-indent: 1cm;">- Lãnh đạo Viện;</p>
-                <p style="margin: 0; padding: 0; text-indent: 1cm;">- Lãnh đạo Thanh tra - Khiếu tố.</p>
-                
-                <p style="margin: 10px 0 0 0; text-indent: 1cm;">
-                    Tôi tên: ${don.can_bo_phan_cong || '...'}, chức danh: ${don.chuc_danh || '...'}
-                </p>
-                <p style="margin: 0; padding: 0; text-indent: 1cm;">
-                    Được phân công nghiên cứu, đề xuất xử lý đối với đơn ${don.phan_loai.toLowerCase() || '...'} của ${don.ho_ten || '...'}, địa chỉ: ${don.dia_chi || '...'}, ghi ngày ${ngayGhi} (Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày ${ngayNhan} do ${don.nguon_don || '...'} chuyển đến).
-                </p>
-                
-                <p style="font-weight: bold; margin: 10px 0 0 0; text-indent: 1cm;">Nội dung đơn:</p>
-                <p style="text-indent: 1cm; text-align: justify; white-space: pre-wrap; margin: 0; padding: 0;">${don.noi_dung || '...'}</p>
-
-                ${canCuHTML}
-
-                <p style="font-weight: bold; margin: 10px 0 0 0; text-indent: 1cm;">Đề xuất xử lý:</p>
-                <p style="text-indent: 1cm; text-align: justify; white-space: pre-wrap; margin: 0; padding: 0;">${don.de_xuat || '...'}</p>
-                
-                <p style="font-weight: bold; margin: 10px 0 0 0; text-indent: 1cm;">Kết quả xử lý (nếu đã có):</p>
-                <p style="text-indent: 1cm; text-align: justify; white-space: pre-wrap; margin: 0; padding: 0;">${don.ket_qua || '...'}</p>
-
-                <div style="margin-top: 50px; width: 100%; display: flex; justify-content: flex-end;">
-                     <div style="width: 40%; text-align: center;">
-                         <p style="margin: 0; font-weight: bold; text-transform: uppercase;">Người làm phiếu đề xuất</p>
-                         <p style="margin: 0; font-style: italic; font-size: 12pt;">(Ký, ghi rõ họ tên)</p>
-                         <p style="margin-top: 80px; font-weight: bold; text-align: center;">${don.can_bo_phan_cong || '...'}</p>
-                     </div>
-                </div>
-            `;
+            if (don.can_cu && don.can_cu.length > 0) {
+                 content += `CĂN CỨ:\n`;
+                 don.can_cu.forEach((cc, idx) => {
+                     content += `${idx + 1}. ${cc.loai_vb || 'VB'} số ${cc.so_vb || '...' || ''} ngày ${cc.ngay_vb || '...' || ''} của ${cc.co_quan_ban_hanh || '...'}\n`;
+                 });
+                 content += '\n';
+            }
+            
+            content += `ĐỀ XUẤT XỬ LÝ:\n${don.de_xuat || 'Chưa có đề xuất'}\n\n`;
+            content += `KẾT QUẢ XỬ LÝ (Nếu đã có):\n${don.ket_qua || 'Chưa có kết quả'}\n\n`;
+            
+            content += `CHUYỂN ĐẾN: ${don.chuyen_den || 'Không rõ'}\n`;
+            content += `Ngày chuyển đơn: ${don.ngay_chuyen_don || 'Không rõ'}\n`;
             
             return content;
         }
         
         /**
-         * HÀM MỚI (Đã chỉnh sửa): Xuất File Word (.doc) với định dạng chuẩn.
-         * @param {string} id - ID của đơn.
+         * HÀM CHÍNH: Tạo file Word (.doc) theo Mẫu số 07/KT với định dạng chuẩn
          */
         function downloadResolutionResultDoc(id) {
              if (!id) {
-                alert('Vui lòng chọn một đơn trong danh sách để trích xuất.');
+                alert('Vui lòng chọn một đơn trong danh sách (click vào hàng) để trích xuất.');
                 return;
             }
             
             const don = dons.find(d => d.id === id);
             if (!don) return alert('Không tìm thấy đơn.');
             
-            // 1. Lấy nội dung HTML đã được định dạng
-            const contentHtmlBody = generateProposalContent(don);
+            // --- XỬ LÝ DỮ LIỆU ĐƠN ---
+            const now = new Date();
+            const year = now.getFullYear();
+            const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${year}`;
+            
+            // Format ngày nhận đơn
+            let ngayNhanText = don.ngay_nhan || '...';
+            if (ngayNhanText !== '...') {
+                 const [y, m, d] = ngayNhanText.split('-');
+                 ngayNhanText = `${d}/${m}/${y}`;
+            }
+            
+            // Format ngày ghi đơn
+            let ngayGhiText = don.ngay_ghi || '...';
+            if (ngayGhiText !== '...') {
+                 const [y, m, d] = ngayGhiText.split('-');
+                 ngayGhiText = `${d}/${m}/${y}`;
+            }
+            
+            // Format căn cứ
+            let canCuText = '';
+             if (don.can_cu && don.can_cu.length > 0) {
+                 don.can_cu.forEach((cc, idx) => {
+                     const loai = cc.loai_vb || 'Văn bản';
+                     const so = cc.so_vb || '...';
+                     const ngay = cc.ngay_vb ? formatDate(cc.ngay_vb) : '...';
+                     const cq = cc.co_quan_ban_hanh || '...';
+                     canCuText += `&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; - ${loai} số: ${so} ngày ${ngay} của ${cq}.<w:LSDException Locked="false" Priority="48" Name="Grid Table 3 Accent 1"/>`;
+                 });
+                 // Xóa ký tự xuống dòng cuối cùng
+                 if (canCuText.endsWith('<w:LSDException Locked="false" Priority="48" Name="Grid Table 3 Accent 1"/>')) {
+                     canCuText = canCuText.substring(0, canCuText.length - '<w:LSDException Locked="false" Priority="48" Name="Grid Table 3 Accent 1"/>'.length);
+                 }
+            }
+            
+            // Định dạng ngày/tháng/năm
+            function formatDate(isoDate) {
+                if (!isoDate) return '...';
+                const [y, m, d] = isoDate.split('-');
+                return `${d} tháng ${m} năm ${y}`;
+            }
 
-            const filename = `Phieu_De_Xuat_${(don.ho_ten || 'don_thu').replace(/\s/g, '_')}_${don.ngay_nhan}.doc`;
-            
-            // 2. Định nghĩa CSS cho Word (Margins, Font, Page Size)
-            const style = `
-                /* Cài đặt định dạng trang */
-                @page WordSection1 {
-                    size: 21cm 29.7cm; /* A4 */
-                    margin: 2.0cm 1.5cm 2.0cm 3.0cm; /* Top Right Bottom Left (2cm 1.5cm 2cm 3cm) */
-                    mso-page-orientation: portrait;
-                }
-                div.WordSection1 {
-                    page: WordSection1;
-                }
-                
-                /* Định dạng chung */
-                body, table, p, div {
-                    font-family: 'Times New Roman', serif;
-                    font-size: 14pt;
-                    line-height: 1.5;
-                }
-                
-                /* Căn lề đầu dòng 1cm cho các đoạn nội dung */
-                p {
-                    text-align: left;
-                    margin: 0; 
-                    padding: 0;
-                    line-height: 1.5;
-                }
-                p:not(:first-child) {
-                    margin-top: 0.5em; /* Khoảng cách giữa các đoạn */
-                }
-                
-                /* Loại bỏ định dạng đặc biệt cho table header */
-                table p {
-                    text-indent: 0 !important;
-                    margin: 0 !important;
-                }
-                
-                /* Căn lề đầu dòng 1cm cho nội dung chính */
-                p:not(.no-indent) {
-                     text-indent: 1cm;
-                }
-                
-            `;
-            
-            // 3. Tạo HTML hoàn chỉnh cho Word
+            // --- CẤU TRÚC HTML CHO FILE WORD ---
             const htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                     <head>
                         <meta charset="utf-8">
-                        <title>${filename}</title>
-                        <style>${style}</style>
-                        </head>
+                        <title>Phiếu Đề Xuất Xử Lý Đơn</title>
+                        <style>
+                            /* --- ĐỊNH DẠNG CHUNG (Áp dụng cho A4, Times New Roman 14) --- */
+                            @page
+                            {
+                                size: A4; 
+                                margin: 2.0cm 1.5cm 2.0cm 3.0cm; /* Trên, Phải, Dưới, Trái */
+                                mso-header-margin: 1.0cm; 
+                                mso-footer-margin: 1.0cm;
+                                mso-page-orientation: portrait;
+                            }
+                            
+                            body
+                            {
+                                font-family: 'Times New Roman', serif; 
+                                font-size: 14pt; 
+                                margin: 0; 
+                                padding: 0;
+                            }
+                            
+                            p
+                            {
+                                font-family: 'Times New Roman', serif;
+                                font-size: 14pt;
+                                margin: 0;
+                                padding: 0;
+                                line-height: 1.3; /* Giãn dòng 1.3pt */
+                                text-align: justify;
+                            }
+
+                            /* --- ĐỊNH DẠNG ĐẶC BIỆT --- */
+                            .center { text-align: center; }
+                            .right { text-align: right; }
+                            .bold { font-weight: bold; }
+                            .uppercase { text-transform: uppercase; }
+                            .indent { text-indent: 1cm; } /* Đầu dòng cách lề 1cm */
+                            .no-indent { text-indent: 0; }
+                            .single-line { line-height: 1.0; }
+                            .margin-top { margin-top: 10pt; }
+                        </style>
+                    </head>
                     <body>
-                        <div class="WordSection1">
-                            ${contentHtmlBody}
-                        </div>
+                    
+                        <p class="right single-line bold">
+                            Mẫu số 07/KT <br>
+                            <span style="font-style: italic;">(Theo QĐ số 28/QĐ-VKSTC ngày 15/02/2023)</span>
+                        </p>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 15pt;">
+                            <tr>
+                                <td style="width: 50%; text-align: center; border: none;">
+                                    <p class="bold uppercase single-line">VIỆN KIỂM SÁT NHÂN DÂN</p>
+                                    <p class="bold uppercase single-line">THÀNH PHỐ CẦN THƠ</p>
+                                    <p class="bold uppercase single-line"><u>THANH TRA - KHIẾU TỐ</u></p>
+                                </td>
+                                <td style="width: 50%; text-align: center; border: none;">
+                                    <p class="bold uppercase single-line">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                                    <p class="bold single-line"><u>Độc lập - Tự do - Hạnh phúc</u></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%; border: none;"></td>
+                                <td style="width: 50%; text-align: center; border: none; font-style: italic; padding-top: 10pt;">
+                                    <p>Cần Thơ, ngày ... tháng ... năm ${year}</p>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <p class="no-indent bold center uppercase margin-top">PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</p>
+                        <p class="no-indent bold margin-top">Kính gửi:</p>
+                        <p class="no-indent">
+                            &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;- Lãnh đạo Viện;<br>
+                            &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;- Lãnh đạo Thanh tra - Khiếu tố.
+                        </p>
+
+                        <p class="indent margin-top">
+                            Tôi tên: <span class="bold">${don.can_bo_phan_cong || '..................'}</span>, chức danh: <span class="bold">${don.chuc_danh || '..................'}</span>;
+                        </p>
+                        <p class="indent">
+                            Được phân công nghiên cứu, đề xuất xử lý đối với đơn của <span class="bold">${don.ho_ten || '..................'}</span>, địa chỉ: <span class="bold">${don.dia_chi || '..................'}</span>, ghi ngày ${ngayGhiText} (Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày ${ngayNhanText} do ${don.nguon_don || '..................'} chuyển đến).
+                        </p>
+                        <p class="indent">
+                            Nội dung đơn: <span class="bold">${don.noi_dung || '..................'}</span>.
+                        </p>
+                        
+                        <p class="indent">
+                            Theo quy định tại điểm ... Khoản ... Điều ... Quy chế tiếp công dân, giải quyết khiếu nại, tố cáo và kiểm sát việc giải quyết khiếu nại, tố cáo trong hoạt động tư pháp (ban hành kèm theo Quyết định số: 222/QĐ-VKSTC ngày 22/6/2023), Đơn nêu trên thuộc <span class="bold">${don.tham_quyen || '..................'}</span>.
+                        </p>
+                        
+                        <p class="no-indent margin-top">
+                           <span class="indent">Căn cứ:</span><br>
+                           ${canCuText || '&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;..................................................................'}
+                        </p>
+                        
+                        <p class="indent margin-top">
+                            Tôi xin đề xuất: <span class="bold">${don.de_xuat || '..................'}</span>./.
+                        </p>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 30pt;">
+                            <tr>
+                                <td style="width: 40%; text-align: center; border: none;">
+                                    <p class="bold center single-line">Phê duyệt của Lãnh đạo Viện</p>
+                                    <p class="bold center uppercase single-line">VIỆN TRƯỞNG</p>
+                                    <p class="bold center" style="margin-top: 50pt;">Nguyễn Thanh Liêm</p>
+                                </td>
+                                <td style="width: 30%; text-align: center; border: none;">
+                                    <p class="bold center single-line">Lãnh đạo đơn vị đề xuất</p>
+                                    <p class="bold center uppercase single-line">PHÓ CHÁNH THANH TRA</p>
+                                    <p class="bold center" style="margin-top: 50pt;">..................</p>
+                                </td>
+                                <td style="width: 30%; text-align: center; border: none;">
+                                     <p class="bold center single-line">Ngày ... tháng ... năm ${year}</p>
+                                     <p class="bold center single-line">Người đề xuất</p>
+                                     <p class="bold center" style="margin-top: 50pt;">${don.can_bo_phan_cong || '..................'}</p>
+                                </td>
+                            </tr>
+                        </table>
+                        
                     </body>
                 </html>
             `;
             
+            const filename = `Trích_xuất_xử_lý_đơn_${(don.ho_ten || 'don_thu').replace(/\s/g, '_')}_${don.ngay_nhan}.doc`;
+            
+            // Dùng Blob và saveAs để lưu file
             const blob = new Blob(['\ufeff', htmlContent], {
                 type: 'application/msword'
             });
@@ -1815,7 +1909,7 @@
                     <span class="close-btn" onclick="document.getElementById('proposalModal').style.display='none'">&times;</span>
                     <h3>Trích xuất Đề xuất/Xử lý đơn</h3>
                     <div style="border: 1px solid #ccc; padding: 15px; background-color: #f9f9f9; max-height: 70vh; overflow-y: auto;">
-                        <div id="proposal-content" style="font-family: 'Times New Roman', serif; font-size: 14pt; line-height: 1.5; white-space: normal;"></div>
+                        <pre id="proposal-content"></pre>
                     </div>
                     <div class="btn-container">
                         <button class="export-proposal-btn" onclick="downloadResolutionResultDoc(currentSelectedId)">Xuất File Word (.doc)</button>
