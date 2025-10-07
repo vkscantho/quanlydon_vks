@@ -674,6 +674,19 @@
             </div>
         </div>
     </div>
+    
+     <div id="proposalModal" class="modal">
+        <div class="modal-content large-modal">
+            <span class="close-btn" onclick="document.getElementById('proposalModal').style.display='none'">&times;</span>
+            <h3>Trích xuất Đề xuất/Xử lý đơn</h3>
+            <div style="border: 1px solid #ccc; padding: 15px; background-color: #f9f9f9; max-height: 70vh; overflow-y: auto;">
+                <pre id="proposal-content"></pre>
+            </div>
+            <div class="btn-container">
+                <button class="export-proposal-btn" onclick="downloadResolutionResultDoc(currentSelectedId)">Xuất File Word (.doc)</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // --- 1. FIREBASE CONFIGURATION & INITIALIZATION (PHẢI THAY THẾ) ---
@@ -715,7 +728,7 @@
                 'Phòng 1', 'Phòng 2', 'Phòng 7', 'Phòng 8', 'Phòng 9', 'Phòng 10', 'Phòng 11', 'Phòng 15'
             ],
             'Đơn vị': [
-                'TT-KT',  'VKSND KV1',  'VKSND KV2', 'VKSND KV3', 'VKSND KV4', 'VKSND KV5', 'VKSND KV6', 'VKSND KV7',
+                'Thành phố', 'VKSND KV1',  'VKSND KV2', 'VKSND KV3', 'VKSND KV4', 'VKSND KV5', 'VKSND KV6', 'VKSND KV7',
                 'VKSND KV8', 'VKSND KV9', 'VKSND KV10', 'VKSND KV11', 'VKSND KV12', 'VKSND KV13', 'VKSND KV14'
             ]
         };
@@ -957,19 +970,20 @@
             unitSelect.innerHTML = '';
             unitSelect.disabled = false;
             
-            if (role.endsWith('_TP') || role === 'admin' || role === 'super_admin') {
-                const option = document.createElement('option');
-                option.value = 'Thành phố';
-                option.textContent = 'Thành phố';
-                unitSelect.appendChild(option);
-            } else if (role.endsWith('_KV')) {
-                 lookupData['Đơn vị'].forEach(unit => {
-                    const option = document.createElement('option');
-                    option.value = unit;
-                    option.textContent = unit;
-                    unitSelect.appendChild(option);
-                });
+            // Lấy danh sách Đơn vị từ lookupData, bỏ 'Thành phố' nếu là cấp Khu vực
+            let units = [...lookupData['Đơn vị']];
+            if (role.endsWith('_KV')) {
+                units = units.filter(u => u !== 'Thành phố');
+            } else if (role.endsWith('_TP') || role === 'admin' || role === 'super_admin') {
+                 units = units.filter(u => u === 'Thành phố');
             }
+            
+            units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit;
+                option.textContent = unit;
+                unitSelect.appendChild(option);
+            });
         }
 
         // --- FORM & DATA FUNCTIONS ---
@@ -1022,7 +1036,10 @@
                 de_xuat: document.getElementById('de_xuat').value,
                 ket_qua: document.getElementById('ket_qua').value,
                 lastUpdatedBy: currentUser.username,
-                lastUpdated: new Date().toISOString()
+                lastUpdated: new Date().toISOString(),
+                // Lưu thêm đơn vị và vai trò người tạo để tiện cho việc lọc sau này
+                createdByUnit: currentUser.unit, 
+                createdByRole: currentUser.role
             };
 
             const ref = id ? database.ref('dons/' + id) : database.ref('dons').push();
@@ -1112,6 +1129,7 @@
                 ket_qua: document.getElementById('sua-ket_qua').value,
                 lastUpdatedBy: currentUser.username,
                 lastUpdated: new Date().toISOString()
+                // Giữ nguyên createdByUnit và createdByRole
             };
             
             database.ref('dons/' + id).update(don)
@@ -1128,14 +1146,28 @@
         function editDon(id) {
             const don = dons.find(d => d.id === id);
             if (don) {
-                //populateForm(don); // Chuyển sang sửa trực tiếp ở sidebar
-                populateEditModal(don);
+                // Kiểm tra quyền chỉnh sửa
+                if (canEditDelete(don)) {
+                     // Lãnh đạo cấp KV và Cán bộ cấp KV chỉ được sửa đơn của đơn vị mình.
+                     // Lãnh đạo cấp TP và Admin được sửa tất cả.
+                     populateEditModal(don);
+                } else {
+                     alert('Bạn không có quyền chỉnh sửa đơn này.');
+                }
             } else {
                 alert('Không tìm thấy đơn.');
             }
         }
 
         function deleteDon(id) {
+            const don = dons.find(d => d.id === id);
+             if (!don) return;
+             
+            if (!canEditDelete(don)) {
+                 alert('Bạn không có quyền xóa đơn này.');
+                 return;
+            }
+             
             if (confirm('Bạn có chắc chắn muốn xóa đơn này?')) {
                 database.ref('dons/' + id).remove()
                     .then(() => {
@@ -1146,6 +1178,43 @@
                         alert('Lỗi khi xóa đơn: ' + error.message);
                     });
             }
+        }
+        
+        /**
+         * HÀM MỚI: Kiểm tra quyền chỉnh sửa/xóa đơn
+         * Chỉ cho phép sửa/xóa nếu:
+         * 1. Là Admin/Manager_TP (Thấy và sửa tất cả)
+         * 2. Là Manager_KV/User_TP/User_KV và đơn đó được tạo ra bởi một người cùng đơn vị (createdByUnit == currentUser.unit)
+         * - Cụ thể: User_TP/User_KV chỉ nên sửa đơn của chính mình (đã lọc ở dưới)
+         * - Manager_KV có thể sửa đơn của cán bộ trong đơn vị mình.
+         */
+        function canEditDelete(don) {
+             if (!currentUser) return false;
+             
+             // 1. Admin/Manager_TP có quyền tuyệt đối
+             if (currentUser.role === 'admin' || currentUser.role === 'manager_TP') {
+                 return true;
+             }
+             
+             // 2. Các vai trò còn lại
+             const isDonFromCurrentUserUnit = don.createdByUnit === currentUser.unit;
+             
+             if (!isDonFromCurrentUserUnit) {
+                 return false;
+             }
+             
+             // 3. Nếu đơn thuộc cùng đơn vị:
+             // - User_TP/User_KV chỉ được sửa đơn của chính mình (kiểm tra username)
+             if (currentUser.role.startsWith('user_')) {
+                 return don.lastUpdatedBy === currentUser.username;
+             }
+             
+             // - Manager_KV được sửa đơn của bất kỳ ai trong đơn vị mình
+             if (currentUser.role === 'manager_KV') {
+                 return true;
+             }
+             
+             return false;
         }
         
         function capNhatThamQuyenMacDinh(prefix = '') {
@@ -1245,16 +1314,14 @@
         // --- DATA DISPLAY AND FILTERING (ĐÃ CHỈNH SỬA) ---
         
         /**
-         * BỔ SUNG: Hàm kích hoạt tìm kiếm
-         * Gọi updateTable để áp dụng các bộ lọc từ ô tìm kiếm
+         * Hàm kích hoạt tìm kiếm
          */
         function filterTable() {
             updateTable();
         }
 
         /**
-         * BỔ SUNG: Hàm xóa bộ lọc tìm kiếm
-         * Xóa nội dung trong ô tìm kiếm và ngày, sau đó tải lại bảng
+         * Hàm xóa bộ lọc tìm kiếm
          */
         function resetFilter() {
             document.getElementById('search-text').value = '';
@@ -1271,23 +1338,38 @@
             // 1. Lấy giá trị từ ô tìm kiếm
             const searchText = document.getElementById('search-text').value.toLowerCase().trim();
             const searchDate = document.getElementById('search-date').value;
-
-            // 2. Lọc dữ liệu theo Đơn vị và Quyền hạn của người dùng (Logic ban đầu)
+            
+            // 2. Lọc dữ liệu theo Đơn vị và Quyền hạn của người dùng (Logic bảo mật)
             let currentFilteredDons = dons.filter(don => {
-                if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
-                    return true; // Admin thấy tất cả
-                }
-                if (currentUser.role === 'manager_TP' && currentUser.unit === 'Thành phố') {
-                    // Lãnh đạo TP thấy tất cả các đơn vị
-                    return true;
-                }
+                const donUnit = don.createdByUnit; // Đơn vị tạo đơn
+                const donCreator = don.lastUpdatedBy; // Người tạo/cập nhật cuối cùng
 
-                // Lãnh đạo KV/Cán bộ TP/Cán bộ KV chỉ thấy đơn của đơn vị mình
-                const donUnit = accounts[don.lastUpdatedBy]?.unit;
-                return donUnit === currentUser.unit;
+                switch (currentUser.role) {
+                    case 'admin':
+                    case 'super_admin':
+                    case 'manager_TP':
+                        // Admin và Lãnh đạo TP thấy tất cả
+                        return true;
+                    
+                    case 'user_TP':
+                        // Cán bộ TP chỉ thấy đơn mình tạo
+                        return donCreator === currentUser.username;
+                        
+                    case 'manager_KV':
+                        // Lãnh đạo KV chỉ thấy đơn của đơn vị mình
+                        return donUnit === currentUser.unit;
+
+                    case 'user_KV':
+                        // Cán bộ KV chỉ thấy đơn mình tạo
+                        return donCreator === currentUser.username;
+
+                    default:
+                        return false;
+                }
             });
 
-            // 3. Áp dụng bộ lọc tìm kiếm mới (Họ tên/Cơ quan/Tổ chức và Ngày nhận đơn)
+
+            // 3. Áp dụng bộ lọc tìm kiếm (Họ tên/Cơ quan/Tổ chức và Ngày nhận đơn)
             const finalFilteredDons = currentFilteredDons.filter(don => {
                 let textMatch = true;
                 let dateMatch = true;
@@ -1333,9 +1415,13 @@
                 // Thao tác
                 const actionsCell = row.insertCell();
                 actionsCell.classList.add('table-actions');
+                
+                // Quyền sửa/xóa
+                const canModify = canEditDelete(don);
+                
                 actionsCell.innerHTML = `
-                    <button class="edit-btn" onclick="editDon('${don.id}')">Sửa</button>
-                    <button class="delete-btn" onclick="deleteDon('${don.id}')">Xóa</button>
+                    <button class="edit-btn" onclick="editDon('${don.id}')" ${canModify ? '' : 'disabled'}>Sửa</button>
+                    <button class="delete-btn" onclick="deleteDon('${don.id}')" ${canModify ? '' : 'disabled'}>Xóa</button>
                     <button class="proposal-print-btn" onclick="showProposalModal('${don.id}')">Đề xuất/Xử lý</button>
                 `;
 
@@ -1356,24 +1442,40 @@
             document.getElementById('proposalModal').style.display = 'flex';
         }
 
-        // --- EXPORT/REPORTING FUNCTIONS (GIỮ NGUYÊN) ---
+        // --- EXPORT/REPORTING FUNCTIONS (CHỈNH SỬA LỌC TRONG EXPORT) ---
 
         function exportList() {
              // Lọc dữ liệu theo Đơn vị và Quyền hạn của người dùng (sử dụng logic lọc của updateTable)
+             // Lưu ý: Cần sao chép logic lọc phân quyền từ updateTable()
+             
+            // 1. Lấy giá trị từ ô tìm kiếm
             const searchText = document.getElementById('search-text').value.toLowerCase().trim();
             const searchDate = document.getElementById('search-date').value;
-            
+             
+             // 2. Lọc dữ liệu theo Quyền hạn của người dùng (Logic bảo mật)
             let currentFilteredDons = dons.filter(don => {
-                if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
-                    return true;
+                const donUnit = don.createdByUnit;
+                const donCreator = don.lastUpdatedBy;
+
+                switch (currentUser.role) {
+                    case 'admin':
+                    case 'super_admin':
+                    case 'manager_TP':
+                        return true;
+                    
+                    case 'user_TP':
+                    case 'user_KV':
+                        return donCreator === currentUser.username;
+                        
+                    case 'manager_KV':
+                        return donUnit === currentUser.unit;
+
+                    default:
+                        return false;
                 }
-                if (currentUser.role === 'manager_TP' && currentUser.unit === 'Thành phố') {
-                    return true; 
-                }
-                const donUnit = accounts[don.lastUpdatedBy]?.unit;
-                return donUnit === currentUser.unit;
             });
             
+            // 3. Áp dụng bộ lọc tìm kiếm
             const finalFilteredDons = currentFilteredDons.filter(don => {
                 let textMatch = true;
                 let dateMatch = true;
@@ -1413,6 +1515,7 @@
                     'Đề xuất': don.de_xuat || '',
                     'Kết quả': don.ket_qua || '',
                     'Người cập nhật cuối': don.lastUpdatedBy || '',
+                    'Đơn vị tạo đơn': don.createdByUnit || '', 
                     'Thời gian cập nhật': don.lastUpdated ? new Date(don.lastUpdated).toLocaleString('vi-VN') : ''
                 };
             });
@@ -1426,12 +1529,12 @@
         }
 
         function exportReport() {
-            // ... (Original logic for exporting report - KHÔNG THAY ĐỔI) ...
+            // ... (Original logic for exporting report - GIỮ NGUYÊN) ...
             alert('Chức năng xuất báo cáo đang được phát triển.');
         }
         
         function downloadJSON() {
-            // ... (Original logic for backing up JSON - KHÔNG THAY ĐỔI) ...
+            // ... (Original logic for backing up JSON - GIỮ NGUYÊN) ...
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dons, null, 4));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
@@ -1443,7 +1546,7 @@
 
         function generateProposalContent(don) {
             let content = `VIỆN KIỂM SÁT NHÂN DÂN THÀNH PHỐ CẦN THƠ\n\n`;
-            content += `ĐƠN VỊ XỬ LÝ: ${accounts[don.lastUpdatedBy]?.unit || 'Không rõ'}\n`;
+            content += `ĐƠN VỊ XỬ LÝ: ${don.createdByUnit || 'Không rõ'}\n`;
             content += `NGƯỜI LẬP: ${don.can_bo_phan_cong || don.lastUpdatedBy || 'Không rõ'}\n`;
             content += `CHỨC DANH: ${don.chuc_danh || 'Không rõ'}\n`;
             content += `-----------------------------------------------------------\n\n`;
@@ -1483,7 +1586,7 @@
             
             const content = generateProposalContent(don);
 
-            const filename = `Trích_xuất_xử_lý_đơn_${don.ho_ten.replace(/\s/g, '_')}_${don.ngay_nhan}.doc`;
+            const filename = `Trích_xuất_xử_lý_đơn_${(don.ho_ten || 'don_thu').replace(/\s/g, '_')}_${don.ngay_nhan}.doc`;
             
             const htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -1521,7 +1624,7 @@
             populateCanCuFields([], '');
             populateCanCuFields([], 'sua-');
             
-            setupEnterKeyListener(); // Đã thêm ở lần chỉnh sửa trước
+            setupEnterKeyListener(); 
             
             const accountBtn = document.getElementById('account-btn');
             if (accountBtn) {
@@ -1579,11 +1682,13 @@
         }
         
         // Tạo Modal Proposal (Đề xuất/Xử lý)
+        // Lưu ý: Đã tạo trong init ở lần trước, nhưng vì bị mất nên tôi tạo lại trong lần khởi tạo này
         function createProposalModal() {
             const modal = document.createElement('div');
             modal.id = 'proposalModal';
             modal.className = 'modal';
-            modal.innerHTML = `
+             // Lấy nội dung từ HTML bên ngoài để tránh bị mất
+             const contentHtml = `
                 <div class="modal-content large-modal">
                     <span class="close-btn" onclick="document.getElementById('proposalModal').style.display='none'">&times;</span>
                     <h3>Trích xuất Đề xuất/Xử lý đơn</h3>
@@ -1595,12 +1700,13 @@
                     </div>
                 </div>
             `;
+            modal.innerHTML = contentHtml;
             document.body.appendChild(modal);
         }
         
         // Gọi hàm khởi tạo khi trang tải xong
         document.addEventListener('DOMContentLoaded', () => {
-             createProposalModal(); // Tạo modal cho nút đề xuất/xử lý
+             createProposalModal();
              init();
         });
 
