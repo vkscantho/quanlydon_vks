@@ -10,7 +10,7 @@
                  connect-src 'self' https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebaseio.com wss://*.firebasedatabase.app https://*.jsdelivr.net;
                  img-src 'self' data: https://vienkiemsat.cantho.gov.vn https://upload.wikimedia.org blob:;">
 
-    <title>Hệ thống Quản Lý Đơn Khiếu nại - Tố Cáo</title>
+    <title>Phần Mềm Quản Lý Đơn Khiếu nại - Tố Cáo</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -192,6 +192,16 @@
             gap: 10px;
             margin-bottom: 5px;
         }
+        
+        .can-cu-item > div:nth-child(4) { /* Cột 4: Văn bản */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .can-cu-van-ban-custom {
+            margin-top: 5px !important;
+        }
+
 
         table {
             width: 100%;
@@ -1023,6 +1033,26 @@
              populateUnitSelect('new-unit');
         }
         
+        // --- CHỨC NĂNG MỚI: Cập nhật hiển thị ô input tùy chỉnh ---
+        function updateVanBanInputVisibility(selectElement) {
+             const isCustom = selectElement.value === 'Tự điền vào văn bản';
+             // Tìm input ngay sau select (nằm trong cùng div container)
+             const customInput = selectElement.nextElementSibling; 
+
+             if (customInput && customInput.classList.contains('can-cu-van-ban-custom')) {
+                 if (isCustom) {
+                     customInput.style.display = 'block';
+                     customInput.required = true;
+                     // Không clear giá trị nếu đang chỉnh sửa đơn có dữ liệu cũ
+                 } else {
+                     customInput.style.display = 'none';
+                     customInput.required = false;
+                     // clear giá trị trong ô input custom khi người dùng chuyển sang chọn giá trị có sẵn
+                     customInput.value = ''; 
+                 }
+             }
+         }
+
         // --- CẬP NHẬT: Hàm thêm căn cứ mới (Đã sửa) ---
         function addCanCu(prefix = '') {
             const container = document.getElementById(prefix + 'can_cu_container');
@@ -1030,23 +1060,32 @@
             newItem.className = 'can-cu-item';
             
             // Bắt đầu tạo HTML cho select box Văn bản
-            let vanBanSelectHtml = '<select class="can-cu-van-ban">';
+            // Thêm sự kiện onchange để gọi hàm hiển thị ô input tùy chỉnh
+            let vanBanSelectHtml = '<select class="can-cu-van-ban" onchange="updateVanBanInputVisibility(this)">';
             vanBanSelectHtml += '<option value="">Chọn Văn bản/Quy chế</option>'; // Default empty option
             vanBanOptionsFinal.forEach(option => {
                 vanBanSelectHtml += `<option value="${option}">${option}</option>`;
             });
             vanBanSelectHtml += '</select>';
+            
+            // Input cho tùy chọn "Tự điền vào văn bản" (mặc định ẩn)
+            let customInputHtml = '<input type="text" placeholder="Tự điền Văn bản/Quy chế..." class="can-cu-van-ban-custom" style="display: none; margin-top: 5px;">';
+
 
             newItem.innerHTML = `
-                <input type="text" placeholder="Điểm" class="can-cu-diem" value="">
+                <input type="number" placeholder="Điểm" class="can-cu-diem" value="">
                 <input type="number" placeholder="Khoản" class="can-cu-khoan" value="">
                 <input type="number" placeholder="Điều" class="can-cu-dieu" value="">
-                ${vanBanSelectHtml}
+                <div style="display: flex; flex-direction: column;">
+                     ${vanBanSelectHtml}
+                     ${customInputHtml}
+                </div>
                 <button onclick="this.parentNode.remove()">Xóa</button>
             `;
             container.appendChild(newItem);
         }
         
+        // --- CẬP NHẬT: Hàm lấy dữ liệu căn cứ (Đã sửa) ---
         function getCanCuData(prefix = '') {
             const container = document.getElementById(prefix + 'can_cu_container');
             const items = container.querySelectorAll('.can-cu-item');
@@ -1055,9 +1094,18 @@
                 const diem = item.querySelector('.can-cu-diem').value.trim();
                 const khoan = item.querySelector('.can-cu-khoan').value.trim();
                 const dieu = item.querySelector('.can-cu-dieu').value.trim();
+                const vanBanSelect = item.querySelector('.can-cu-van-ban');
+                const customInput = item.querySelector('.can-cu-van-ban-custom');
                 
-                // CẬP NHẬT: Đọc giá trị từ SELECT BOX
-                const van_ban = item.querySelector('.can-cu-van-ban').value.trim();
+                let van_ban = '';
+                
+                // Logic: Nếu đang chọn "Tự điền vào văn bản", lấy giá trị từ ô input tùy chỉnh
+                if (vanBanSelect.value === 'Tự điền vào văn bản' && customInput) {
+                    van_ban = customInput.value.trim();
+                } else {
+                    // Ngược lại, lấy giá trị từ dropdown
+                    van_ban = vanBanSelect.value.trim();
+                }
                 
                 if (diem || khoan || dieu || van_ban) {
                      canCuList.push({ diem, khoan, dieu, van_ban });
@@ -1077,48 +1125,50 @@
              }
              
              canCuList.forEach(item => {
-                 let vanBanSelectHtml = '<select class="can-cu-van-ban">';
                  let vanBanValue = item.van_ban || '';
+                 let customInputValue = '';
                  
-                 // Kiểm tra: nếu giá trị DB là custom (không có trong danh sách cố định)
+                 // 1. Kiểm tra nếu giá trị là CUSTOM (không có trong list cố định)
                  let isCustomValue = vanBanValue && !vanBanOptionsFinal.includes(vanBanValue);
-                 let selectedExists = false;
-                 
-                 // 1. Nếu giá trị DB là custom, thêm nó vào đầu và chọn để bảo toàn dữ liệu
+
+                 // 2. Xác định giá trị cho select và input
+                 let selectValue = vanBanValue;
                  if (isCustomValue) {
-                     vanBanSelectHtml += `<option value="${vanBanValue}" selected>Đã lưu: ${vanBanValue}</option>`;
-                     selectedExists = true;
+                     selectValue = 'Tự điền vào văn bản'; // Buộc select chọn Tự điền
+                     customInputValue = vanBanValue; // Đẩy giá trị DB vào input
+                 } else if (vanBanValue === 'Tự điền vào văn bản') {
+                     // Nếu giá trị DB là chính nó (Tự điền) nhưng không phải custom value đã lưu
+                     selectValue = 'Tự điền vào văn bản';
+                     customInputValue = ''; // Input custom nên rỗng nếu không phải dữ liệu cũ
                  }
-
-                 // 2. Thêm tùy chọn mặc định "Chọn..."
-                 let selectedDefault = (!selectedExists && vanBanValue === '') ? 'selected' : '';
-                 vanBanSelectHtml += `<option value="" ${selectedDefault}>Chọn Văn bản/Quy chế</option>`;
-                 if (selectedDefault) selectedExists = true;
-
-
-                 // 3. Thêm các tùy chọn cố định
+                 
+                 // Bắt đầu tạo HTML cho select box Văn bản
+                 let vanBanSelectHtml = `<select class="can-cu-van-ban" onchange="updateVanBanInputVisibility(this)">`;
+                 vanBanSelectHtml += `<option value="" ${selectValue === '' ? 'selected' : ''}>Chọn Văn bản/Quy chế</option>`;
+                 
                  vanBanOptionsFinal.forEach(option => {
-                     let selected = '';
-                     
-                     // Nếu giá trị không phải custom VÀ khớp với option, chọn nó
-                     if (!isCustomValue && option === vanBanValue) {
-                         selected = 'selected';
-                         selectedExists = true;
-                     }
-
+                     const selected = (option === selectValue) ? 'selected' : '';
                      vanBanSelectHtml += `<option value="${option}" ${selected}>${option}</option>`;
                  });
-
                  vanBanSelectHtml += '</select>';
+                 
+                 // Thêm input cho tùy chọn "Tự điền vào văn bản"
+                 let customInputDisplay = (selectValue === 'Tự điền vào văn bản') ? 'block' : 'none';
+                 let customInputRequired = (selectValue === 'Tự điền vào văn bản') ? 'required' : '';
+                 let customInputHtml = `<input type="text" placeholder="Tự điền Văn bản/Quy chế..." class="can-cu-van-ban-custom" style="display: ${customInputDisplay}; margin-top: 5px;" value="${customInputValue}" ${customInputRequired}>`;
+
 
                  // Tạo HTML cho item
                  const newItem = document.createElement('div');
                  newItem.className = 'can-cu-item';
                  newItem.innerHTML = `
-                     <input type="text" placeholder="Điểm" class="can-cu-diem" value="${item.diem || ''}">
+                     <input type="number" placeholder="Điểm" class="can-cu-diem" value="${item.diem || ''}">
                      <input type="number" placeholder="Khoản" class="can-cu-khoan" value="${item.khoan || ''}">
                      <input type="number" placeholder="Điều" class="can-cu-dieu" value="${item.dieu || ''}">
-                     ${vanBanSelectHtml}
+                     <div style="display: flex; flex-direction: column;">
+                          ${vanBanSelectHtml}
+                          ${customInputHtml}
+                     </div>
                      <button onclick="this.parentNode.remove()">Xóa</button>
                  `;
                  container.appendChild(newItem);
@@ -1610,15 +1660,11 @@
                      if (c.khoan) parts.push(`khoản ${c.khoan}`);
                      if (c.dieu) parts.push(`Điều ${c.dieu}`);
                      
-                     // CẬP NHẬT: Xử lý Văn bản. Nếu là 'Tự điền...' thì không hiển thị trong căn cứ chung.
-                     // Nếu Văn bản là một giá trị khác, thì hiển thị nó.
+                     // CẬP NHẬT: Xử lý Văn bản. 
                      let vanBanDisplay = '';
                      if (c.van_ban && c.van_ban !== 'Tự điền vào văn bản') {
                           vanBanDisplay = c.van_ban;
-                     } else if (c.van_ban === 'Tự điền vào văn bản') {
-                          // Nếu là "Tự điền vào văn bản" thì người dùng sẽ phải tự sửa sau khi xuất file.
-                          vanBanDisplay = '(Cần tự điền văn bản)'; 
-                     }
+                     } 
                      
                      if (vanBanDisplay) parts.push(`(${vanBanDisplay})`);
                      
@@ -1787,11 +1833,9 @@
                      canCuDiemKhoanDieu += parts.join(' ') + '; ';
                  }
                  
+                 // Cập nhật logic xử lý Văn bản
                  if (c.van_ban && c.van_ban !== 'Tự điền vào văn bản') {
                     canCuVanBan += c.van_ban + '; ';
-                 } else if (c.van_ban === 'Tự điền vào văn bản') {
-                    // CẬP NHẬT: Ghi chú nếu Văn bản là Tự điền
-                    canCuVanBan += '(Tự điền Văn bản)'; 
                  }
             });
 
