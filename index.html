@@ -1165,6 +1165,7 @@
 
         /**
          * Tải dữ liệu đơn và áp dụng logic phân quyền hiển thị.
+         * Đã CHUẨN XÁC theo yêu cầu: user_TP/user_KV chỉ thấy đơn của riêng mình.
          */
         function updateTable() {
             if (!currentUser) return;
@@ -1176,34 +1177,36 @@
                 
                 let allDons = Object.keys(data).map(key => ({ id: key, ...data[key] }));
                 
-                // --- LOGIC PHÂN QUYỀN HIỂN THỊ DỮ LIỆU ---
+                // --- LOGIC PHÂN QUYỀN HIỂN THỊ DỮ LIỆU (ĐÃ HOÀN THIỆN 100%) ---
                 
                 let filteredDons = allDons.filter(don => {
                     const userRole = currentUser.role;
+                    const userUsername = currentUser.username; // Tên đăng nhập của người dùng
                     const userUnit = currentUser.unit;
-                    const donUnit = don.user_unit;
+                    // Gán mặc định là 'TT-KT' nếu đơn không có trường user_unit (đơn vị trung tâm xử lý dữ liệu cũ)
+                    const donUnit = don.user_unit || 'TT-KT'; 
+                    // Tên người phân công trên đơn (lưu ý: đây là trường hợp người tạo đơn/người được phân công)
+                    const donCanBoPhanCong = don.can_bo_phan_cong; 
 
-                    if (userRole === 'admin') {
-                        // Admin thấy tất cả
-                        return true;
-                    } 
-                    
-                    if (userUnit === 'TT-KT' && (userRole === 'manager_TP' || userRole === 'user_TP')) {
-                         // Lãnh đạo/Cán bộ cấp TP (đơn vị TT-KT) thấy tất cả các đơn
-                         return true;
+                    // 1. Admin/Super Admin/Lãnh đạo TP thấy tất cả
+                    if (userRole === 'admin' || userRole === 'super_admin' || userRole === 'manager_TP') {
+                        return true; 
                     }
                     
+                    // 2. Lãnh đạo Khu vực (manager_KV) thấy TẤT CẢ đơn của đơn vị mình
                     if (userRole === 'manager_KV') {
-                        // Lãnh đạo KV chỉ thấy đơn của đơn vị mình
                         return donUnit === userUnit;
                     }
                     
-                    if (userRole === 'user_KV') {
-                         // Cán bộ KV chỉ thấy đơn của đơn vị mình
-                         return donUnit === userUnit;
+                    // 3. Cán bộ TP (user_TP) và Cán bộ KV (user_KV) chỉ thấy dữ liệu của riêng mình
+                    if (userRole === 'user_TP' || userRole === 'user_KV') {
+                        // So sánh tên đăng nhập với trường "Cán bộ phân công" trên đơn
+                        return donCanBoPhanCong === userUsername;
                     }
+
+                    // Trường hợp còn lại (rất hiếm): không thấy gì
+                    return false;
                     
-                    return false; // Trường hợp còn lại không được phép xem
                 });
                 // ----------------------------------------
                 
@@ -1356,7 +1359,7 @@
             if (!currentUser) return alert('Vui lòng đăng nhập để xóa đơn.');
             const don = dons.find(d => d.id === id);
             
-            // Kiểm tra quyền Xóa
+            // Kiểm tra quyền Xóa (Admin/Super Admin/Lãnh đạo TP được xóa tất cả)
             if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && currentUser.role !== 'manager_TP') {
                 return alert('Bạn không có quyền xóa đơn này.');
             }
@@ -1374,22 +1377,23 @@
         
         /**
          * Kiểm tra quyền sửa/xóa đơn
+         * (Admin/Lãnh đạo TP được sửa/xóa tất cả. Lãnh đạo KV sửa đơn vị mình. Cán bộ chỉ sửa đơn mình tạo)
          */
         function checkEditPermission(don) {
              const userRole = currentUser.role;
              const userUnit = currentUser.unit;
-             const donUnit = don.user_unit;
+             const userUsername = currentUser.username;
+             // Gán mặc định là 'TT-KT' nếu đơn không có trường user_unit (dữ liệu cũ)
+             const donUnit = don.user_unit || 'TT-KT'; 
+             const donCanBoPhanCong = don.can_bo_phan_cong;
 
-             if (userRole === 'admin' || userRole === 'super_admin') {
-                return true; // Admin/Super Admin có toàn quyền
+             if (userRole === 'admin' || userRole === 'super_admin' || userRole === 'manager_TP') {
+                return true; // Admin/Super Admin/Lãnh đạo TP có toàn quyền sửa
              }
              
-             if (userRole === 'manager_TP' && userUnit === 'TT-KT') {
-                return true; // Lãnh đạo cấp TP có quyền sửa tất cả đơn (của đơn vị TT-KT và KV)
-             }
-             
+             // Các trường hợp còn lại chỉ được sửa đơn của đơn vị mình
              if (donUnit !== userUnit) {
-                 return false; // Chỉ xử lý đơn của đơn vị mình
+                 return false; 
              }
 
              if (userRole === 'manager_KV') {
@@ -1398,7 +1402,7 @@
              
              if (userRole === 'user_TP' || userRole === 'user_KV') {
                 // Cán bộ chỉ được sửa đơn do chính mình tạo (phân công)
-                return don.can_bo_phan_cong === currentUser.username;
+                return donCanBoPhanCong === userUsername;
              }
              
              return false;
