@@ -1442,7 +1442,7 @@
             document.getElementById('proposalModal').style.display = 'flex';
         }
 
-        // --- EXPORT/REPORTING FUNCTIONS (CHỈNH SỬA LỌC TRONG EXPORT) ---
+        // --- EXPORT/REPORTING FUNCTIONS ---
 
         function exportList() {
              // Lọc dữ liệu theo Đơn vị và Quyền hạn của người dùng (sử dụng logic lọc của updateTable)
@@ -1633,17 +1633,35 @@
         }
         
         function setupEnterKeyListener() {
-             // Thêm sự kiện nhấn Enter cho ô tìm kiếm
+             // 1. Thêm sự kiện nhấn Enter cho ô Đăng nhập
+             const passwordInput = document.getElementById('password');
+             if (passwordInput) {
+                passwordInput.addEventListener('keyup', function(event) {
+                    if (event.key === 'Enter') {
+                        // Ngăn chặn hành vi mặc định (như gửi form nếu là form)
+                        event.preventDefault(); 
+                        login();
+                    }
+                });
+             }
+             
+             // 2. Thêm sự kiện nhấn Enter cho ô Tìm kiếm
              const searchText = document.getElementById('search-text');
-             searchText.addEventListener('keyup', function(event) {
-                if (event.key === 'Enter') {
-                    filterTable();
-                }
-             });
+             if (searchText) {
+                 searchText.addEventListener('keyup', function(event) {
+                    if (event.key === 'Enter') {
+                        filterTable();
+                    }
+                 });
+             }
+             
+             // 3. Thêm sự kiện thay đổi cho ô ngày tìm kiếm (Giữ nguyên)
              const searchDate = document.getElementById('search-date');
-             searchDate.addEventListener('change', function(event) {
-                filterTable();
-             });
+             if (searchDate) {
+                 searchDate.addEventListener('change', function(event) {
+                    filterTable();
+                 });
+             }
         }
         
         function initSelectOptions() {
@@ -1682,7 +1700,6 @@
         }
         
         // Tạo Modal Proposal (Đề xuất/Xử lý)
-        // Lưu ý: Đã tạo trong init ở lần trước, nhưng vì bị mất nên tôi tạo lại trong lần khởi tạo này
         function createProposalModal() {
             const modal = document.createElement('div');
             modal.id = 'proposalModal';
