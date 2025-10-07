@@ -490,8 +490,8 @@
                     <button onclick="exportList()">Xuất Danh sách đơn</button>
                     <button onclick="exportReport()">Xuất báo cáo</button>
                     <button onclick="downloadJSON()">Sao lưu JSON</button>
-                    <button class="export-btn" onclick="downloadProposalDoc(currentSelectedId)">Xuất Phiếu Đề Xuất (Mẫu 07)</button>
-                    <button class="export-btn" onclick="downloadResultExtractionDoc(currentSelectedId)">Xuất Trích Xuất Kết Quả</button>
+                    <button class="export-btn" onclick="downloadProposalDoc(currentSelectedId)">Xuất Phiếu Đề Xuất</button>
+                    <button class="export-btn" onclick="downloadResultExtractionDoc(currentSelectedId)">Xuất Kết quả xử lý đơn</button>
                 </div>
                 <div class="search-bar" style="margin-bottom: 20px;">
                     <input type="text" id="search-text" placeholder="Tìm kiếm theo Họ tên/Cơ quan/Tổ chức..." style="padding: 8px; width: 40%; border: 1px solid #ccc; border-radius: 4px;">
@@ -504,7 +504,7 @@
                         <tr>
                             <th>STT</th>
                             <th>Ngày nhận đơn</th>
-                            <th>Họ tên /CQ/ TC</th>
+                            <th>Họ tên/Cơ quan/Tổ chức</th>
                             <th>Nội dung đơn</th>
                             <th>Phân loại</th>
                             <th>Thẩm quyền</th>
