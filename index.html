@@ -186,12 +186,28 @@
             min-height: 80px;
         }
         
+        /* NEW CAN CU STYLING */
+        .can-cu-row {
+            margin-bottom: 10px; 
+            padding: 5px;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+        }
         .can-cu-item {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 2fr auto;
+            grid-template-columns: 0.5fr 0.5fr 1fr 2fr auto; /* Diem, Khoan, Dieu, Van Ban, Button */
             gap: 10px;
-            margin-bottom: 5px;
         }
+        .can-cu-sub-item {
+            display: none; 
+            grid-column: 1 / -1; 
+            margin-top: 5px;
+        }
+        .can-cu-sub-item.form-group {
+            display: flex; 
+            flex-direction: column;
+        }
+        /* END NEW CAN CU STYLING */
 
         table {
             width: 100%;
@@ -733,6 +749,16 @@
             ]
         };
         
+        // DANH SÁCH VĂN BẢN (Căn cứ) MỚI
+        const vanBanList = [
+            'Quy chế số: 222/QĐ-VKSTC ngày 22/6/2023 của VKSNDTC',
+            'Bộ Luật Tố tụng Hình sự',
+            'Bộ Luật Tố tụng dân sự',
+            'Bộ luật Tố tụng hành chính',
+            'Luật THADS',
+            'Tự điền vào văn bản' // Tùy chọn cuối cùng
+        ];
+        
         // --- AUTHENTICATION FUNCTIONS ---
         function login() {
             const username = document.getElementById('username').value;
@@ -1210,37 +1236,79 @@
             }
         }
         
-        // --- CĂN CỨ FUNCTIONS ---
+        // --- CĂN CỨ FUNCTIONS (ĐÃ SỬA ĐỔI) ---
+
+        function getVanBanOptions(selectedValue = '') {
+            let options = '';
+            vanBanList.forEach(item => {
+                const selected = item === selectedValue ? 'selected' : '';
+                options += `<option value="${item}" ${selected}>${item}</option>`;
+            });
+            return options;
+        }
+        
+        function toggleCustomVanBan(selectId, containerId) {
+            const select = document.getElementById(selectId);
+            const container = document.getElementById(containerId);
+            if (select.value === 'Tự điền vào văn bản') {
+                container.style.display = 'flex'; // Hiện input khi chọn Tự điền
+            } else {
+                container.style.display = 'none';
+            }
+        }
+        
         function addCanCu(prefix = '') {
             const container = document.getElementById(prefix + 'can_cu_container');
-            // Đếm số lượng phần tử con hiện có để xác định index mới
+            
+            // Tìm index lớn nhất để đảm bảo ID là duy nhất
             let maxIndex = -1;
-            for (let i = 0; i < container.children.length; i++) {
-                const idAttr = container.children[i].id;
-                const match = idAttr.match(/_(\d+)$/);
-                if (match) {
-                    const index = parseInt(match[1]);
-                    if (index > maxIndex) {
-                        maxIndex = index;
-                    }
-                }
-            }
+            const rowElements = Array.from(container.querySelectorAll('.can-cu-row'));
+            rowElements.forEach(row => {
+                 const match = row.id.match(/_(\d+)$/);
+                 if (match) {
+                     const index = parseInt(match[1]);
+                     if (index > maxIndex) {
+                         maxIndex = index;
+                     }
+                 }
+            });
             const newIndex = maxIndex + 1;
             
-            const div = document.createElement('div');
-            div.className = 'can-cu-item';
-            div.id = prefix + 'can_cu_item_' + newIndex;
-            div.innerHTML = `
-                <input type="text" id="${prefix}loai_vb_${newIndex}" placeholder="Loại VB">
-                <input type="text" id="${prefix}so_vb_${newIndex}" placeholder="Số VB">
-                <input type="date" id="${prefix}ngay_vb_${newIndex}" placeholder="Ngày VB">
-                <input type="text" id="${prefix}co_quan_ban_hanh_${newIndex}" placeholder="Cơ quan ban hành">
-                <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_item_${newIndex}')">Xóa</button>
+            // 1. Tạo container cho toàn bộ hàng (bao gồm input tùy chọn)
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'can-cu-row';
+            rowDiv.id = prefix + 'can_cu_row_' + newIndex; 
+            
+            // 2. Main line (Điểm, Khoản, Điều, Văn bản, Button)
+            const mainDiv = document.createElement('div');
+            mainDiv.className = 'can-cu-item';
+            mainDiv.id = prefix + 'can_cu_item_' + newIndex;
+            mainDiv.innerHTML = `
+                <input type="text" id="${prefix}diem_${newIndex}" placeholder="Điểm">
+                <input type="text" id="${prefix}khoan_${newIndex}" placeholder="Khoản">
+                <input type="text" id="${prefix}dieu_${newIndex}" placeholder="Điều">
+                <select id="${prefix}van_ban_${newIndex}" onchange="toggleCustomVanBan('${prefix}van_ban_${newIndex}', '${prefix}van_ban_khac_container_${newIndex}')">
+                    ${getVanBanOptions()}
+                </select>
+                <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_row_${newIndex}')">Xóa</button>
             `;
-            container.appendChild(div);
+            
+            // 3. Custom text line (Tự điền Văn bản khác)
+            const customDiv = document.createElement('div');
+            customDiv.id = prefix + 'van_ban_khac_container_' + newIndex;
+            customDiv.className = 'can-cu-sub-item form-group'; 
+            customDiv.innerHTML = `
+                 <label for="${prefix}van_ban_khac_${newIndex}" style="font-weight: normal; margin-top: 5px;">Tên Văn bản khác:</label>
+                 <input type="text" id="${prefix}van_ban_khac_${newIndex}" placeholder="Nhập tên Văn bản khác (Tự điền)">
+            `;
+            
+            rowDiv.appendChild(mainDiv);
+            rowDiv.appendChild(customDiv);
+            container.appendChild(rowDiv);
         }
 
         function removeCanCu(id) {
+            // Xóa toàn bộ row container
             const element = document.getElementById(id);
             if (element) {
                 element.remove();
@@ -1251,28 +1319,35 @@
             const container = document.getElementById(prefix + 'can_cu_container');
             const canCuList = [];
             
-            // Lấy tất cả các input fields trong container, sắp xếp theo ID để đảm bảo thứ tự
-            const inputElements = Array.from(container.querySelectorAll('.can-cu-item')).map(item => {
-                 // Lấy index từ ID của item div
-                 const match = item.id.match(/_(\d+)$/);
-                 const index = match ? parseInt(match[1]) : -1;
-                 
-                 return {
-                     index: index,
-                     loai_vb: item.querySelector(`input[id^="${prefix}loai_vb_"]`)?.value || '',
-                     so_vb: item.querySelector(`input[id^="${prefix}so_vb_"]`)?.value || '',
-                     ngay_vb: item.querySelector(`input[id^="${prefix}ngay_vb_"]`)?.value || '',
-                     co_quan_ban_hanh: item.querySelector(`input[id^="${prefix}co_quan_ban_hanh_"]`)?.value || ''
-                 };
-            }).filter(item => item.index !== -1).sort((a, b) => a.index - b.index);
+            // Lấy tất cả các 'can-cu-row' elements
+            const rowElements = Array.from(container.querySelectorAll('.can-cu-row'));
 
-            inputElements.forEach(item => {
-                if (item.loai_vb || item.so_vb || item.ngay_vb || item.co_quan_ban_hanh) {
+            rowElements.forEach(row => {
+                // Lấy index từ ID của row
+                const match = row.id.match(/_(\d+)$/);
+                if (!match) return;
+                const index = match[1];
+                
+                // Lấy giá trị các trường
+                const diem = document.getElementById(`${prefix}diem_${index}`)?.value.trim() || '';
+                const khoan = document.getElementById(`${prefix}khoan_${index}`)?.value.trim() || '';
+                const dieu = document.getElementById(`${prefix}dieu_${index}`)?.value.trim() || '';
+                const van_ban_select = document.getElementById(`${prefix}van_ban_${index}`)?.value || '';
+                const van_ban_khac = document.getElementById(`${prefix}van_ban_khac_${index}`)?.value.trim() || '';
+                
+                // Xác định Văn bản cuối cùng
+                let van_ban = van_ban_select;
+                if (van_ban_select === 'Tự điền vào văn bản') {
+                    van_ban = van_ban_khac;
+                }
+                
+                // Chỉ lưu nếu có ít nhất một trường dữ liệu quan trọng
+                if (diem || khoan || dieu || van_ban) {
                     canCuList.push({ 
-                        loai_vb: item.loai_vb, 
-                        so_vb: item.so_vb, 
-                        ngay_vb: item.ngay_vb, 
-                        co_quan_ban_hanh: item.co_quan_ban_hanh 
+                        diem: diem, 
+                        khoan: khoan, 
+                        dieu: dieu, 
+                        van_ban: van_ban 
                     });
                 }
             });
@@ -1287,22 +1362,51 @@
             
             if (canCuData && canCuData.length > 0) {
                 canCuData.forEach((item, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'can-cu-item';
-                    // Dùng index trực tiếp làm ID tạm thời cho modal
-                    div.id = prefix + 'can_cu_item_' + index; 
-                    div.innerHTML = `
-                        <input type="text" id="${prefix}loai_vb_${index}" placeholder="Loại VB" value="${item.loai_vb || ''}">
-                        <input type="text" id="${prefix}so_vb_${index}" placeholder="Số VB" value="${item.so_vb || ''}">
-                        <input type="date" id="${prefix}ngay_vb_${index}" placeholder="Ngày VB" value="${item.ngay_vb || ''}">
-                        <input type="text" id="${prefix}co_quan_ban_hanh_${index}" placeholder="Cơ quan ban hành" value="${item.co_quan_ban_hanh || ''}">
-                        <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_item_${index}')">Xóa</button>
+                    // Xác định giá trị Văn bản hiển thị trên select và input tùy chọn
+                    let selectedVanBan = item.van_ban;
+                    let customVanBanValue = '';
+                    let isCustom = false;
+                    
+                    if (!vanBanList.includes(item.van_ban)) {
+                        selectedVanBan = 'Tự điền vào văn bản'; // Chọn option Tự điền
+                        customVanBanValue = item.van_ban; // Đưa giá trị thực vào input tùy chọn
+                        isCustom = true;
+                    }
+                    
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'can-cu-row';
+                    rowDiv.id = prefix + 'can_cu_row_' + index;
+                    
+                    // 1. Main line
+                    const mainDiv = document.createElement('div');
+                    mainDiv.className = 'can-cu-item';
+                    mainDiv.id = prefix + 'can_cu_item_' + index;
+                    mainDiv.innerHTML = `
+                        <input type="text" id="${prefix}diem_${index}" placeholder="Điểm" value="${item.diem || ''}">
+                        <input type="text" id="${prefix}khoan_${index}" placeholder="Khoản" value="${item.khoan || ''}">
+                        <input type="text" id="${prefix}dieu_${index}" placeholder="Điều" value="${item.dieu || ''}">
+                        <select id="${prefix}van_ban_${index}" onchange="toggleCustomVanBan('${prefix}van_ban_${index}', '${prefix}van_ban_khac_container_${index}')">
+                            ${getVanBanOptions(selectedVanBan)}
+                        </select>
+                        <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_row_${index}')">Xóa</button>
                     `;
-                    container.appendChild(div);
+                    
+                    // 2. Custom text line
+                    const customDiv = document.createElement('div');
+                    customDiv.id = prefix + 'van_ban_khac_container_' + index;
+                    customDiv.className = 'can-cu-sub-item form-group';
+                    customDiv.style.display = isCustom ? 'flex' : 'none'; // Set display
+                    customDiv.innerHTML = `
+                         <label for="${prefix}van_ban_khac_${index}" style="font-weight: normal; margin-top: 5px;">Tên Văn bản khác:</label>
+                         <input type="text" id="${prefix}van_ban_khac_${index}" placeholder="Nhập tên Văn bản khác (Tự điền)" value="${customVanBanValue}">
+                    `;
+
+                    rowDiv.appendChild(mainDiv);
+                    rowDiv.appendChild(customDiv);
+                    container.appendChild(rowDiv);
                 });
             } 
-            // Luôn thêm một dòng trống nếu không có dữ liệu hoặc để cho người dùng thêm mới
-            addCanCu(prefix); 
+            addCanCu(prefix); // Luôn thêm một dòng trống
         }
 
 
@@ -1320,7 +1424,7 @@
             }
         });
         
-        // --- DATA DISPLAY AND FILTERING (ĐÃ CHỈNH SỬA) ---
+        // --- DATA DISPLAY AND FILTERING ---
         
         /**
          * Hàm kích hoạt tìm kiếm
@@ -1426,7 +1530,7 @@
                 actionsCell.classList.add('table-actions');
                 
                 // Quyền sửa/xóa - Giao diện không disable, chỉ kiểm tra khi click
-                const canModify = canEditDelete(don); // Vẫn tính toán để làm cơ sở cho việc tô màu/style nếu muốn
+                const canModify = canEditDelete(don); 
                 
                 actionsCell.innerHTML = `
                     <button class="edit-btn" onclick="editDon('${don.id}')">Sửa</button>
@@ -1468,7 +1572,6 @@
 
         function exportList() {
              // Lọc dữ liệu theo Đơn vị và Quyền hạn của người dùng (sử dụng logic lọc của updateTable)
-             // Lưu ý: Cần sao chép logic lọc phân quyền từ updateTable()
              
             // 1. Lấy giá trị từ ô tìm kiếm
             const searchText = document.getElementById('search-text').value.toLowerCase().trim();
@@ -1519,6 +1622,16 @@
             }
 
             const dataToExport = finalFilteredDons.map((don, index) => {
+                 // Format căn cứ mới cho Excel
+                 const canCuText = don.can_cu ? don.can_cu.map(c => {
+                     const parts = [
+                         c.diem ? `Điểm ${c.diem}` : '',
+                         c.khoan ? `Khoản ${c.khoan}` : '',
+                         c.dieu ? `Điều ${c.dieu}` : ''
+                     ].filter(Boolean).join(', ');
+                     return `${parts} (${c.van_ban || 'Không rõ VB'})`;
+                 }).join('; ') : '';
+                 
                 return {
                     'STT': index + 1,
                     'Ngày nhận đơn': don.ngay_nhan || '',
@@ -1533,7 +1646,7 @@
                     'Chuyển đến': don.chuyen_den || '',
                     'Ngày chuyển đơn': don.ngay_chuyen_don || '',
                     'Nội dung đơn': don.noi_dung || '',
-                    'Căn cứ': don.can_cu ? don.can_cu.map(c => `${c.loai_vb} số ${c.so_vb} ngày ${c.ngay_vb} của ${c.co_quan_ban_hanh}`).join('; ') : '',
+                    'Căn cứ': canCuText, // Cập nhật Căn cứ
                     'Đề xuất': don.de_xuat || '',
                     'Kết quả': don.ket_qua || '',
                     'Người cập nhật cuối': don.lastUpdatedBy || '',
@@ -1586,7 +1699,15 @@
             if (don.can_cu && don.can_cu.length > 0) {
                  content += `CĂN CỨ:\n`;
                  don.can_cu.forEach((cc, idx) => {
-                     content += `${idx + 1}. ${cc.loai_vb || 'VB'} số ${cc.so_vb || '...' || ''} ngày ${cc.ngay_vb || '...' || ''} của ${cc.co_quan_ban_hanh || '...'}\n`;
+                     const parts = [
+                         cc.diem ? `Điểm ${cc.diem}` : '',
+                         cc.khoan ? `Khoản ${cc.khoan}` : '',
+                         cc.dieu ? `Điều ${cc.dieu}` : ''
+                     ].filter(Boolean).join(', ');
+                     
+                     const partText = parts ? `Căn cứ ${parts}` : 'Căn cứ';
+                     
+                     content += `${idx + 1}. ${partText} ${cc.van_ban ? `của ${cc.van_ban}` : ''}\n`;
                  });
                  content += '\n';
             }
@@ -1601,7 +1722,7 @@
         }
         
         /**
-         * HÀM CHÍNH: Tạo file Word (.doc) theo Mẫu số 07/KT với định dạng chuẩn
+         * HÀM CHÍNH: Tạo file Word (.doc) theo Mẫu số 07/KT với định dạng chuẩn (ĐÃ SỬA PHẦN CĂN CỨ)
          */
         function downloadResolutionResultDoc(id) {
              if (!id) {
@@ -1615,7 +1736,6 @@
             // --- XỬ LÝ DỮ LIỆU ĐƠN ---
             const now = new Date();
             const year = now.getFullYear();
-            const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${year}`;
             
             // Format ngày nhận đơn
             let ngayNhanText = don.ngay_nhan || '...';
@@ -1631,20 +1751,22 @@
                  ngayGhiText = `${d}/${m}/${y}`;
             }
             
-            // Format căn cứ
+            // Format căn cứ (NEW STRUCTURE)
             let canCuText = '';
-             if (don.can_cu && don.can_cu.length > 0) {
-                 don.can_cu.forEach((cc, idx) => {
-                     const loai = cc.loai_vb || 'Văn bản';
-                     const so = cc.so_vb || '...';
-                     const ngay = cc.ngay_vb ? formatDate(cc.ngay_vb) : '...';
-                     const cq = cc.co_quan_ban_hanh || '...';
-                     canCuText += `&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; - ${loai} số: ${so} ngày ${ngay} của ${cq}.<w:LSDException Locked="false" Priority="48" Name="Grid Table 3 Accent 1"/>`;
-                 });
-                 // Xóa ký tự xuống dòng cuối cùng
-                 if (canCuText.endsWith('<w:LSDException Locked="false" Priority="48" Name="Grid Table 3 Accent 1"/>')) {
-                     canCuText = canCuText.substring(0, canCuText.length - '<w:LSDException Locked="false" Priority="48" Name="Grid Table 3 Accent 1"/>'.length);
-                 }
+            if (don.can_cu && don.can_cu.length > 0) {
+                don.can_cu.forEach((cc) => {
+                    const parts = [
+                        cc.diem ? `Điểm ${cc.diem}` : '',
+                        cc.khoan ? `Khoản ${cc.khoan}` : '',
+                        cc.dieu ? `Điều ${cc.dieu}` : ''
+                    ].filter(Boolean).join(', ');
+                    
+                    const partText = parts ? `${parts}` : 'Quy định';
+                    const vanBanText = cc.van_ban || 'Văn bản...';
+                    
+                    // Thêm khoảng cách đầu dòng và dấu chấm
+                    canCuText += `&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;- ${partText} của ${vanBanText}.<br>`;
+                });
             }
             
             // Định dạng ngày/tháng/năm
@@ -1800,6 +1922,9 @@
             document.getElementById("ngay_nhan").value = new Date().toISOString().slice(0, 10);
             document.getElementById('new-role').onchange = capNhatDonViTheoVaiTro;
             capNhatDonViTheoVaiTro();
+            // Khởi tạo Căn cứ với cấu trúc mới
+            document.getElementById('can_cu_container').innerHTML = '';
+            document.getElementById('sua-can_cu_container').innerHTML = '';
             populateCanCuFields([], '');
             populateCanCuFields([], 'sua-');
             
