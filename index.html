@@ -1433,126 +1433,113 @@
         }
         
         function addCanCu(prefix = '') {
-             const container = document.getElementById(prefix + 'can_cu_container');
-             const index = container.children.length;
-
-             const item = document.createElement('div');
-             item.className = 'can-cu-item';
-             item.id = `${prefix}can_cu_item_${index}`;
-             item.innerHTML = `
-                 <input type="text" placeholder="Số" id="${prefix}can_cu_so_${index}">
-                 <input type="date" placeholder="Ngày" id="${prefix}can_cu_ngay_${index}">
-                 <select id="${prefix}can_cu_van_ban_${index}" onchange="toggleCustomVanBan('${prefix}', ${index})"></select>
-                 <div id="${prefix}can_cu_van_ban_container_${index}">
-                     <input type="text" placeholder="Văn bản khác (nếu chọn 'Tự điền...')" id="${prefix}can_cu_van_ban_custom_${index}" class="can-cu-van-ban-custom" style="display: none;">
-                 </div>
-                 <button class="delete-btn" onclick="removeCanCu('${prefix}can_cu_item_${index}')">Xóa</button>
-             `;
-             container.appendChild(item);
-             
-             populateVanBanSelect(prefix, index);
-             toggleCustomVanBan(prefix, index); // Đảm bảo input custom bị ẩn
-        }
-        
-        function populateVanBanSelect(prefix, index) {
-            const selectElement = document.getElementById(`${prefix}can_cu_van_ban_${index}`);
-            if (!selectElement) return;
+            const container = document.getElementById(prefix + 'can_cu_container');
+            const newItem = document.createElement('div');
+            newItem.className = 'can-cu-item';
             
-            selectElement.innerHTML = '<option value="">--Chọn Văn bản--</option>';
-            vanBanOptionsFinal.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item;
-                option.textContent = item;
-                selectElement.appendChild(option);
+            let vanBanSelectHtml = '<select class="can-cu-van-ban" onchange="updateVanBanInputVisibility(this)">';
+            vanBanSelectHtml += '<option value="">Chọn Văn bản/Quy chế</option>'; 
+            vanBanOptionsFinal.forEach(option => {
+                vanBanSelectHtml += `<option value="${option}">${option}</option>`;
             });
-        }
-        
-        function toggleCustomVanBan(prefix, index) {
-             const selectElement = document.getElementById(`${prefix}can_cu_van_ban_${index}`);
-             const customInput = document.getElementById(`${prefix}can_cu_van_ban_custom_${index}`);
-             
-             if (selectElement && customInput) {
-                 if (selectElement.value === 'Tự điền vào văn bản') {
-                     customInput.style.display = 'block';
-                     customInput.required = true;
-                 } else {
-                     customInput.style.display = 'none';
-                     customInput.required = false;
-                     customInput.value = ''; 
-                 }
-             }
-        }
+            vanBanSelectHtml += '</select>';
+            
+            let customInputHtml = '<input type="text" placeholder="Tự điền Văn bản/Quy chế..." class="can-cu-van-ban-custom" style="display: none; margin-top: 5px;">';
 
-        function removeCanCu(id) {
-             const element = document.getElementById(id);
-             if (element) {
-                 element.remove();
-             }
+
+            newItem.innerHTML = `
+                <input type="text" placeholder="Điểm" class="can-cu-diem" value="">
+                <input type="number" placeholder="Khoản" class="can-cu-khoan" value="">
+                <input type="number" placeholder="Điều" class="can-cu-dieu" value="">
+                <div style="display: flex; flex-direction: column;">
+                     ${vanBanSelectHtml}
+                     ${customInputHtml}
+                </div>
+                <button onclick="this.parentNode.remove()">Xóa</button>
+            `;
+            container.appendChild(newItem);
         }
         
+        // Hàm lấy dữ liệu căn cứ (Giữ nguyên)
         function getCanCuData(prefix = '') {
             const container = document.getElementById(prefix + 'can_cu_container');
-            if (!container) return [];
-            
+            const items = container.querySelectorAll('.can-cu-item');
             const canCuList = [];
-            
-            Array.from(container.children).forEach((item, index) => {
-                const so = document.getElementById(`${prefix}can_cu_so_${index}`)?.value || '';
-                const ngay = document.getElementById(`${prefix}can_cu_ngay_${index}`)?.value || '';
-                const vanBanSelect = document.getElementById(`${prefix}can_cu_van_ban_${index}`)?.value;
-                const vanBanCustom = document.getElementById(`${prefix}can_cu_van_ban_custom_${index}`)?.value || '';
+            items.forEach(item => {
+                const diem = item.querySelector('.can-cu-diem').value.trim();
+                const khoan = item.querySelector('.can-cu-khoan').value.trim();
+                const dieu = item.querySelector('.can-cu-dieu').value.trim();
+                const vanBanSelect = item.querySelector('.can-cu-van-ban');
+                const customInput = item.querySelector('.can-cu-van-ban-custom');
                 
-                let van_ban = vanBanSelect;
-                if (vanBanSelect === 'Tự điền vào văn bản' && vanBanCustom) {
-                    van_ban = vanBanCustom;
+                let van_ban = '';
+                
+                if (vanBanSelect.value === 'Tự điền vào văn bản' && customInput) {
+                    van_ban = customInput.value.trim();
+                } else {
+                    van_ban = vanBanSelect.value.trim();
                 }
                 
-                if (so || ngay || van_ban) {
-                    canCuList.push({
-                        so: so,
-                        ngay: ngay,
-                        van_ban: van_ban
-                    });
+                if (diem || khoan || dieu || van_ban) {
+                     canCuList.push({ diem, khoan, dieu, van_ban });
                 }
             });
             return canCuList;
         }
-        
-        function populateCanCuFields(canCuData, prefix = '') {
-            const container = document.getElementById(prefix + 'can_cu_container');
-            if (!container) return;
-            container.innerHTML = ''; 
-            
-            if (canCuData && Array.isArray(canCuData)) {
-                canCuData.forEach((item, index) => {
-                    // Thêm phần tử mới
-                    addCanCu(prefix); 
 
-                    // Cập nhật giá trị
-                    const soInput = document.getElementById(`${prefix}can_cu_so_${index}`);
-                    const ngayInput = document.getElementById(`${prefix}can_cu_ngay_${index}`);
-                    const vanBanSelect = document.getElementById(`${prefix}can_cu_van_ban_${index}`);
-                    const vanBanCustom = document.getElementById(`${prefix}can_cu_van_ban_custom_${index}`);
+        // Hàm hiển thị căn cứ khi sửa đơn (Giữ nguyên)
+        function populateCanCuFields(canCuList, prefix = '') {
+             const container = document.getElementById(prefix + 'can_cu_container');
+             container.innerHTML = '';
+             
+             if (!canCuList || canCuList.length === 0) {
+                 addCanCu(prefix);
+                 return;
+             }
+             
+             canCuList.forEach(item => {
+                 let vanBanValue = item.van_ban || '';
+                 let customInputValue = '';
+                 
+                 let isCustomValue = vanBanValue && !vanBanOptionsFinal.includes(vanBanValue);
 
-                    if (soInput) soInput.value = item.so || '';
-                    if (ngayInput) ngayInput.value = item.ngay || '';
-                    
-                    if (vanBanSelect) {
-                        // Kiểm tra xem giá trị item.van_ban có trong danh sách cố định không
-                        let isFixedOption = vanBanOptionsFinal.includes(item.van_ban);
-                        
-                        if (isFixedOption) {
-                            vanBanSelect.value = item.van_ban;
-                            toggleCustomVanBan(prefix, index); // Ẩn custom input
-                        } else {
-                            // Nếu không có trong danh sách cố định, mặc định chọn 'Tự điền...' và đặt giá trị vào custom input
-                            vanBanSelect.value = 'Tự điền vào văn bản';
-                            toggleCustomVanBan(prefix, index); // Hiện custom input
-                            if (vanBanCustom) vanBanCustom.value = item.van_ban || '';
-                        }
-                    }
-                });
-            }
+                 let selectValue = vanBanValue;
+                 if (isCustomValue) {
+                     selectValue = 'Tự điền vào văn bản'; 
+                     customInputValue = vanBanValue; 
+                 } else if (vanBanValue === 'Tự điền vào văn bản') {
+                     selectValue = 'Tự điền vào văn bản';
+                     customInputValue = ''; 
+                 }
+                 
+                 let vanBanSelectHtml = `<select class="can-cu-van-ban" onchange="updateVanBanInputVisibility(this)">`;
+                 vanBanSelectHtml += `<option value="" ${selectValue === '' ? 'selected' : ''}>Chọn Văn bản/Quy chế</option>`;
+                 
+                 vanBanOptionsFinal.forEach(option => {
+                     const selected = (option === selectValue) ? 'selected' : '';
+                     vanBanSelectHtml += `<option value="${option}" ${selected}>${option}</option>`;
+                 });
+                 vanBanSelectHtml += '</select>';
+                 
+                 let customInputDisplay = (selectValue === 'Tự điền vào văn bản' || isCustomValue) ? 'block' : 'none';
+                 let customInputRequired = (selectValue === 'Tự điền vào văn bản' || isCustomValue) ? 'required' : '';
+                 let customInputHtml = `<input type="text" placeholder="Tự điền Văn bản/Quy chế..." class="can-cu-van-ban-custom" style="display: ${customInputDisplay}; margin-top: 5px;" value="${customInputValue}" ${customInputRequired}>`;
+
+
+                 const newItem = document.createElement('div');
+                 newItem.className = 'can-cu-item';
+                 newItem.innerHTML = `
+                     <input type="text" placeholder="Điểm" class="can-cu-diem" value="${item.diem || ''}">
+                     <input type="number" placeholder="Khoản" class="can-cu-khoan" value="${item.khoan || ''}">
+                     <input type="number" placeholder="Điều" class="can-cu-dieu" value="${item.dieu || ''}">
+                     <div style="display: flex; flex-direction: column;">
+                          ${vanBanSelectHtml}
+                          ${customInputHtml}
+                     </div>
+                     <button onclick="this.parentNode.remove()">Xóa</button>
+                 `;
+                 container.appendChild(newItem);
+             });
         }
         
         function getGiaiQuyetKNData(prefix = '') {
@@ -2075,162 +2062,117 @@
         }
         
         function createProposalDocumentContent(don) {
-            // Lấy thông tin ngày tháng hiện tại
-            const today = new Date();
-            const day = today.getDate().toString().padStart(2, '0');
-            const month = (today.getMonth() + 1).toString().padStart(2, '0');
-            const year = today.getFullYear();
-            
-            // Format căn cứ
-            let canCuHtml = '<ul>';
-            if (don.can_cu && Array.isArray(don.can_cu)) {
-                don.can_cu.forEach(c => {
-                    const so = c.so ? `số ${c.so}` : '';
-                    const ngay = c.ngay ? `ngày ${new Date(c.ngay).toLocaleDateString('vi-VN')}` : '';
-                    const vanBan = c.van_ban || '';
-                    if (so || ngay || vanBan) {
-                         canCuHtml += `<li>${vanBan} ${so} ${ngay}.</li>`;
-                    }
-                });
-            }
-            canCuHtml += '</ul>';
-            
-            // Dữ liệu chi tiết giải quyết
-            let giaiQuyetKN_Details = '';
-            if (don.tham_quyen === 'Thuộc thẩm quyền giải quyết') {
-                giaiQuyetKN_Details = `
-                    <h4>GIẢI QUYẾT KHIẾU NẠI THUỘC THẨM QUYỀN:</h4>
-                    <p><b>1. Quyết định phân công:</b> Số ${don.gq_phan_cong_so || '...'} ngày ${don.gq_phan_cong_ngay ? new Date(don.gq_phan_cong_ngay).toLocaleDateString('vi-VN') : '...'}. Nội dung: ${don.gq_phan_cong_noi_dung || '...'}</p>
-                    <p><b>2. Kế hoạch xác minh:</b> Số ${don.gq_ke_hoach_so || '...'} ngày ${don.gq_ke_hoach_ngay ? new Date(don.gq_ke_hoach_ngay).toLocaleDateString('vi-VN') : '...'}. Nội dung: ${don.gq_ke_hoach_noi_dung || '...'}</p>
-                    <p><b>3. Đơn vị phối hợp:</b> ${don.gq_dv_phoi_hop_don_vi || '...'}. Nội dung phối hợp: ${don.gq_dv_phoi_hop_noi_dung || '...'}</p>
-                    <p><b>4. Đề xuất hướng giải quyết:</b> ${don.gq_de_xuat_chi_tiet || '...'}</p>
-                    <p><b>5. Quyết định giải quyết (Lần 1):</b> Số ${don.gq_qd_giai_quyet_so || '...'} ngày ${don.gq_qd_giai_quyet_ngay ? new Date(don.gq_qd_giai_quyet_ngay).toLocaleDateString('vi-VN') : '...'}. Nội dung: ${don.gq_qd_giai_quyet_noi_dung || '...'}</p>
-                `;
-            } else if (don.tham_quyen === 'Thuộc thẩm quyền kiểm sát') {
-                 giaiQuyetKN_Details = `
-                    <h4>KIỂM SÁT GIẢI QUYẾT ĐƠN (THUỘC THẨM QUYỀN KIỂM SÁT):</h4>
-                    <p><b>Cơ quan chuyển đến:</b> ${don.ks_chuyen_den_co_quan || '...'}</p>
-                    <p><b>Quyết định giải quyết KN:</b> Số ${don.ks_quyet_dinh_so || '...'} ngày ${don.ks_quyet_dinh_ngay ? new Date(don.ks_quyet_dinh_ngay).toLocaleDateString('vi-VN') : '...'}. Cơ quan ban hành: ${don.ks_quyet_dinh_co_quan || '...'}. Nội dung: ${don.ks_quyet_dinh_noi_dung || '...'}</p>
-                 `;
-            } else if (don.tham_quyen === 'Không thuộc thẩm quyền') {
-                 giaiQuyetKN_Details = `
-                    <h4>KHÔNG THUỘC THẨM QUYỀN:</h4>
-                    <p><b>Xử lý/Chuyển đến:</b> ${don.chuyen_den || '...'}</p>
-                 `;
-            }
-            
-            // Xây dựng nội dung HTML/Word
-            const content = `
-                <html xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="utf-8">
-                    <title>Phiếu Đề Xuất</title>
-                    <style>
-                        body {
-                            font-family: 'Times New Roman', serif;
-                            font-size: 14pt;
-                            line-height: 1.5;
-                            margin: 1in;
-                        }
-                        p {
-                            margin: 0 0 10pt 0;
-                            text-align: justify;
-                        }
-                        h3, h4 {
-                            text-align: center;
-                            font-weight: bold;
-                            margin: 10pt 0;
-                        }
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                        }
-                        th, td {
-                            border: 1px solid black;
-                            padding: 5px;
-                            text-align: left;
-                        }
-                        ul {
-                            margin-top: 0;
-                            margin-bottom: 10pt;
-                            padding-left: 20pt;
-                        }
-                        li {
-                            margin-bottom: 5pt;
-                            text-align: justify;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <table style="border: none;">
-                        <tr style="border: none;">
-                            <td style="width: 50%; text-align: center; border: none;">
-                                <b>VIỆN KIỂM SÁT NHÂN DÂN<br>THÀNH PHỐ CẦN THƠ</b>
-                            </td>
-                            <td style="width: 50%; text-align: center; border: none;">
-                                <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
-                                <b>Độc lập - Tự do - Hạnh phúc</b>
-                            </td>
-                        </tr>
-                        <tr style="border: none;">
-                            <td colspan="2" style="text-align: right; border: none;">
-                                <i>Cần Thơ, ngày ${day} tháng ${month} năm ${year}</i>
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <h3 style="margin-top: 20pt;">PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</h3>
-                    
-                    <p><b>1. Thông tin chung về đơn:</b></p>
-                    <p> - Ngày nhận đơn: ${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'}. Nguồn đơn: ${don.nguon_don || '...'}</p>
-                    <p> - Họ tên/Cơ quan/Tổ chức: <b>${don.ho_ten || '...'}</b>. Địa chỉ: ${don.dia_chi || '...'}</p>
-                    <p> - Đơn ghi ngày: ${don.ngay_ghi ? new Date(don.ngay_ghi).toLocaleDateString('vi-VN') : '...'}. Phân loại: <b>${don.phan_loai || '...'}</b></p>
-                    <p> - Thẩm quyền: <b>${don.tham_quyen || '...'}</b></p>
-                    <p> - Cán bộ được phân công: ${don.can_bo_phan_cong || '...'} - ${don.chuc_danh || '...'}</p>
-                    <p> - Xử lý ban đầu/Chuyển đến: ${don.chuyen_den || '...'} (Ngày: ${don.ngay_chuyen_don ? new Date(don.ngay_chuyen_don).toLocaleDateString('vi-VN') : '...'})</p>
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
 
-                    <p><b>2. Nội dung đơn:</b></p>
-                    <p style="text-indent: 30pt; white-space: pre-wrap;">${don.noi_dung || '...'}</p>
-
-                    <p><b>3. Căn cứ pháp lý:</b></p>
-                    ${canCuHtml}
-
-                    <p><b>4. Đề xuất hướng xử lý của Cán bộ:</b></p>
-                    <p style="text-indent: 30pt; white-space: pre-wrap;">${don.de_xuat || '...'}</p>
-                    
-                    <p><b>5. Kết quả/Quyết định chi tiết:</b></p>
-                    ${giaiQuyetKN_Details}
-                    
-                    <p><b>6. Kết quả xử lý chung (sau cùng):</b></p>
-                    <p style="text-indent: 30pt; white-space: pre-wrap;">${don.ket_qua || '...'}</p>
-
-                    <table style="width: 100%; border: none; margin-top: 30pt;">
-                        <tr style="border: none;">
-                            <td style="width: 50%; text-align: center; border: none;">
-                                <b>CÁN BỘ ĐƯỢC PHÂN CÔNG</b><br>
-                                <i>(Ký, ghi rõ họ tên)</i>
-                                <br><br><br><br>
-                                ${don.can_bo_phan_cong || '...'}
-                            </td>
-                            <td style="width: 50%; text-align: center; border: none;">
-                                <b>LÃNH ĐẠO ĐƠN VỊ</b><br>
-                                <i>(Ký, ghi rõ họ tên)</i>
-                                <br><br><br><br>
-                                .......................................
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-                </html>
+    // Xây dựng nội dung căn cứ (từ mảng can_cu)
+    let canCuHtml = '';
+    if (don.can_cu && Array.isArray(don.can_cu)) {
+        don.can_cu.forEach((item, index) => {
+            canCuHtml += `
+                <p>Theo quy định tại điểm ${item.diem || '...'} Khoản ${item.khoan || '...'} Điều ${item.dieu || '...'} ${item.van_ban || '...'}</p>
             `;
+        });
+    }
+
+    // Xử lý chi tiết giải quyết (nếu có)
+    let giaiQuyetKN_Details = '';
+    if (don.tham_quyen === 'Thuộc thẩm quyền giải quyết') {
+        giaiQuyetKN_Details = `
+            <p><b>Quyết định giải quyết (Lần 1):</b> Số ${don.gq_qd_giai_quyet_so || '...'} ngày ${don.gq_qd_giai_quyet_ngay ? new Date(don.gq_qd_giai_quyet_ngay).toLocaleDateString('vi-VN') : '...'}.</p>
+            <p><b>Nội dung Quyết định:</b></p>
+            <p style="text-indent: 30pt; white-space: pre-wrap;">${don.gq_qd_giai_quyet_noi_dung || '...'}</p>
+        `;
+    } else if (don.tham_quyen === 'Thuộc thẩm quyền kiểm sát') {
+        giaiQuyetKN_Details = `
+            <p><b>Cơ quan chuyển đến:</b> ${don.ks_chuyen_den_co_quan || '...'}</p>
+            <p><b>Quyết định giải quyết KN của Cơ quan đó:</b> Số ${don.ks_quyet_dinh_so || '...'} ngày ${don.ks_quyet_dinh_ngay ? new Date(don.ks_quyet_dinh_ngay).toLocaleDateString('vi-VN') : '...'}. Cơ quan ban hành: ${don.ks_quyet_dinh_co_quan || '...'}.</p>
+            <p><b>Nội dung Quyết định:</b></p>
+            <p style="text-indent: 30pt; white-space: pre-wrap;">${don.ks_quyet_dinh_noi_dung || '...'}</p>
+        `;
+    } else if (don.tham_quyen === 'Không thuộc thẩm quyền') {
+        giaiQuyetKN_Details = `
+            <p><b>Đã Xử lý/Chuyển đến:</b> ${don.chuyen_den || '...'} (Ngày: ${don.ngay_chuyen_don ? new Date(don.ngay_chuyen_don).toLocaleDateString('vi-VN') : '...'})</p>
+        `;
+    }
+
+    const content = `
+        <html xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <title>Phiếu đề xuất xử lý đơn</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 14pt; line-height: 1.5; margin: 1in; }
+                p { margin: 0 0 10pt 0; text-align: justify; }
+                h3, h4 { text-align: center; font-weight: bold; margin: 10pt 0; }
+                table { border-collapse: collapse; }
+                td { padding: 5pt; }
+            </style>
+        </head>
+        <body>
+            <table style="border: none; width: 90%;">
+                <tr style="border: "width: 50%; text-align: center; border: none;">
+                    <p style="text-align: right;">Mẫu số 07/KT<br>Theo QĐ số 28/QĐ-VKSTC<br>ngày 15 tháng 02 năm 2023</p>
+                </tr>    
+            </table>
+            <table style="border: none; width: 100%;">
+                <tr>
+                    <td style="width: 50%; text-align: center; border: none;">
+                        <b>VIỆN KIỂM SÁT NHÂN DÂN<br>THÀNH PHỐ CẦN THƠ<br>THANH TRA - KHIẾU TỐ</b>
+                    </td>
+                    <td style="width: 50%; text-align: center; border: none;">
+                        <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
+                        <b>Độc lập - Tự do - Hạnh phúc</b>
+                    </td>
+                </tr>
+            </table>
+            <table style="border: none; width: 100%;">
+                <tr style="border: none;">
+                    <td colspan="2" style="text-align: center; border: none;">
+                        <i>Cần Thơ, ngày ${day} tháng ${month} năm ${year}</i>
+                    </td>
+                </tr>
+            </table>
             
-            // Hàm này tạo ra một Blob có định dạng MS Word
-            const html = content;
-            const blob = new Blob(['\ufeff', html], {
-                type: 'application/msword'
-            });
-            return blob;
-        }
+            <h3>PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</h3>            
+            <p>Kính gửi:<br>- Lãnh đạo Viện;<br>- Lãnh đạo Thanh tra - Khiếu tố.</p>
+            
+            <p>Tôi tên: ${don.can_bo_phan_cong || '...'}, chức danh: ${don.chuc_danh || '...'};<br>
+            Được phân công nghiên cứu, đề xuất xử lý đối với đơn của ${don.ho_ten || '...'}, địa chỉ: ${don.dia_chi || '...'}, ghi ngày ${don.ngay_ghi ? new Date(don.ngay_ghi).toLocaleDateString('vi-VN') : '...'} (Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày ${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'} do Bưu điện chuyển đến).</p>
+            
+            <p>Nội dung đơn: ${don.noi_dung || '...'}</p>
+            
+            ${canCuHtml}
+            
+            <p>Đơn nêu trên ....</p>
+            <p>Tôi xin đề xuất: ${don.de_xuat || '...'}</p>
+            
+            <table style="width: 100%; border: none; margin-top: 30pt;">
+                <tr style="border: none;">
+                    <td style="width: 50%; text-align: center; border: none;">
+                        <b>Phê duyệt của Lãnh đạo Viện</b><br>
+                        <b>VIỆN TRƯỞNG</b><br><br><br><br>
+                        Nguyễn Thanh Liêm
+                    </td>
+                    <td style="width: 50%; text-align: center; border: none;">
+                        <b>Ngày ${day} tháng ${month} năm ${year}</b><br>
+                        <b>Lãnh đạo đơn vị đề xuất</b><br>
+                        <b>PHÓ CHÁNH THANH TRA</b><br><br><br><br>
+                        Người đề xuất<br>
+                        ${don.can_bo_phan_cong || '...'}
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+
+    const html = content;
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    return blob;
+}
 
         // --- WORD DOC EXPORT UTILITIES (Kết quả xử lý đơn) ---
         
@@ -2251,115 +2193,57 @@
         }
 
         function createResultExtractionDocumentContent(don) {
-             const today = new Date();
-             const day = today.getDate().toString().padStart(2, '0');
-             const month = (today.getMonth() + 1).toString().padStart(2, '0');
-             const year = today.getFullYear();
-             
-             // Dữ liệu chi tiết giải quyết (tóm tắt)
-             let giaiQuyetKN_Details = '';
-             if (don.tham_quyen === 'Thuộc thẩm quyền giải quyết') {
-                 giaiQuyetKN_Details = `
-                     <p><b>Quyết định giải quyết (Lần 1):</b> Số ${don.gq_qd_giai_quyet_so || '...'} ngày ${don.gq_qd_giai_quyet_ngay ? new Date(don.gq_qd_giai_quyet_ngay).toLocaleDateString('vi-VN') : '...'}.</p>
-                     <p><b>Nội dung Quyết định:</b></p>
-                     <p style="text-indent: 30pt; white-space: pre-wrap;">${don.gq_qd_giai_quyet_noi_dung || '...'}</p>
-                 `;
-             } else if (don.tham_quyen === 'Thuộc thẩm quyền kiểm sát') {
-                  giaiQuyetKN_Details = `
-                     <p><b>Cơ quan chuyển đến:</b> ${don.ks_chuyen_den_co_quan || '...'}</p>
-                     <p><b>Quyết định giải quyết KN của Cơ quan đó:</b> Số ${don.ks_quyet_dinh_so || '...'} ngày ${don.ks_quyet_dinh_ngay ? new Date(don.ks_quyet_dinh_ngay).toLocaleDateString('vi-VN') : '...'}. Cơ quan ban hành: ${don.ks_quyet_dinh_co_quan || '...'}.</p>
-                     <p><b>Nội dung Quyết định:</b></p>
-                     <p style="text-indent: 30pt; white-space: pre-wrap;">${don.ks_quyet_dinh_noi_dung || '...'}</p>
-                  `;
-             } else if (don.tham_quyen === 'Không thuộc thẩm quyền') {
-                  giaiQuyetKN_Details = `
-                     <p><b>Đã Xử lý/Chuyển đến:</b> ${don.chuyen_den || '...'} (Ngày: ${don.ngay_chuyen_don ? new Date(don.ngay_chuyen_don).toLocaleDateString('vi-VN') : '...'})</p>
-                  `;
-             }
-             
-             // Xây dựng nội dung HTML/Word
-             const content = `
-                 <html xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-                 <head>
-                     <meta charset="utf-8">
-                     <title>Kết quả xử lý đơn</title>
-                     <style>
-                         body {
-                             font-family: 'Times New Roman', serif;
-                             font-size: 14pt;
-                             line-height: 1.5;
-                             margin: 1in;
-                         }
-                         p {
-                             margin: 0 0 10pt 0;
-                             text-align: justify;
-                         }
-                         h3, h4 {
-                             text-align: center;
-                             font-weight: bold;
-                             margin: 10pt 0;
-                         }
-                     </style>
-                 </head>
-                 <body>
-                     <table style="border: none; width: 100%;">
-                         <tr style="border: none;">
-                             <td style="width: 50%; text-align: center; border: none;">
-                                 <b>VIỆN KIỂM SÁT NHÂN DÂN<br>THÀNH PHỐ CẦN THƠ</b>
-                             </td>
-                             <td style="width: 50%; text-align: center; border: none;">
-                                 <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
-                                 <b>Độc lập - Tự do - Hạnh phúc</b>
-                             </td>
-                         </tr>
-                         <tr style="border: none;">
-                             <td colspan="2" style="text-align: right; border: none;">
-                                 <i>Cần Thơ, ngày ${day} tháng ${month} năm ${year}</i>
-                             </td>
-                         </tr>
-                     </table>
-                     
-                     <h3 style="margin-top: 20pt;">KẾT QUẢ XỬ LÝ ĐƠN</h3>
-                     
-                     <p><b>1. Thông tin chung về đơn:</b></p>
-                     <p> - Ngày nhận đơn: ${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'}. Nguồn đơn: ${don.nguon_don || '...'}</p>
-                     <p> - Họ tên/Cơ quan/Tổ chức: <b>${don.ho_ten || '...'}</b>. Địa chỉ: ${don.dia_chi || '...'}</p>
-                     <p> - Phân loại: <b>${don.phan_loai || '...'}</b>. Thẩm quyền: <b>${don.tham_quyen || '...'}</b></p>
-                     <p> - Nội dung đơn tóm tắt:</p>
-                     <p style="text-indent: 30pt; white-space: pre-wrap;">${(don.noi_dung || '').substring(0, 500)}...</p>
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
 
-                     <p><b>2. Kết quả giải quyết chi tiết:</b></p>
-                     ${giaiQuyetKN_Details}
-                     
-                     <p><b>3. Kết quả xử lý chung (tóm tắt):</b></p>
-                     <p style="text-indent: 30pt; white-space: pre-wrap;">${don.ket_qua || '...'}</p>
+    // Xây dựng nội dung căn cứ
+    let canCuHtml = '';
+    if (don.can_cu && Array.isArray(don.can_cu)) {
+        don.can_cu.forEach((item, index) => {
+            canCuHtml += `
+                <p>Căn cứ tại điểm ${item.diem || '...'} khoản ${item.khoan || '...'} Điều ${item.dieu || '...'} Văn bản: ${item.van_ban || '...'}</p>
+            `;
+        });
+    }
 
-                     <table style="width: 100%; border: none; margin-top: 30pt;">
-                         <tr style="border: none;">
-                             <td style="width: 50%; text-align: center; border: none;">
-                                 <b>CÁN BỘ XỬ LÝ</b><br>
-                                 <i>(Ký, ghi rõ họ tên)</i>
-                                 <br><br><br><br>
-                                 ${don.can_bo_phan_cong || '...'}
-                             </td>
-                             <td style="width: 50%; text-align: center; border: none;">
-                                 <b>LÃNH ĐẠO ĐƠN VỊ</b><br>
-                                 <i>(Ký, ghi rõ họ tên)</i>
-                                 <br><br><br><br>
-                                 .......................................
-                             </td>
-                         </tr>
-                     </table>
-                 </body>
-                 </html>
-             `;
-             
-             const html = content;
-             const blob = new Blob(['\ufeff', html], {
-                 type: 'application/msword'
-             });
-             return blob;
-        }
+    const content = `
+        <html xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <title>Trích xuất kết quả xử lý đơn</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 14pt; line-height: 1.5; margin: 1in; }
+                p { margin: 0 0 10pt 0; text-align: justify; }
+                h3, h4 { text-align: center; font-weight: bold; margin: 10pt 0; }
+            </style>
+        </head>
+        <body>
+            <h3>TRÍCH XUẤT KẾT QUẢ XỬ LÝ ĐƠN</h3>
+            
+            <p>Đơn của: ${don.ho_ten || '...'}</p>
+            <p>Địa chỉ: ${don.dia_chi || '...'}</p>
+            <p>Đơn ghi ngày: ${don.ngay_ghi ? new Date(don.ngay_ghi).toLocaleDateString('vi-VN') : '...'}</p>
+            <p>Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày: ${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'}</p>
+            <p>Nguồn đơn: ${don.nguon_don || '...'}</p>
+            <p>Nội dung đơn: ${don.noi_dung || '...'}</p>
+            
+            ${canCuHtml}
+            
+            <p>Đơn nêu trên đã được xử lý: ${don.ket_qua || '...'}</p>
+            <p>Ngày xử lý: ${don.ngay_xu_ly ? new Date(don.ngay_xu_ly).toLocaleDateString('vi-VN') : '...'}</p>
+            
+            <p style="text-align: right;">Cần Thơ, ngày ${day} tháng ${month} năm ${year}</p>
+            <p style="text-align: right;"><b>CÁN BỘ TRÍCH XUẤT</b></p>
+        </body>
+        </html>
+    `;
+
+    const html = content;
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    return blob;
+}
 
         // --- CHECK DUPLICATE NAME ---
         function checkDuplicateName(prefix = '') {
