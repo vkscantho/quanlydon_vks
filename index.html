@@ -2101,72 +2101,171 @@
     const content = `
         <html xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
-            <meta charset="utf-8">
-            <title>Phiếu đề xuất xử lý đơn</title>
-            <style>
-                body { font-family: 'Times New Roman', serif; font-size: 14pt; line-height: 1.5; margin: 1in; }
-                p { margin: 0 0 10pt 0; text-align: justify; }
-                h3, h4 { text-align: center; font-weight: bold; margin: 10pt 0; }
-                table { border-collapse: collapse; }
-                td { padding: 5pt; }
-            </style>
-        </head>
-        <body>
-            <table style="border: none; width: 90%;">
-                <tr style="border: "width: 50%; text-align: center; border: none;">
-                    <p style="text-align: right;">Mẫu số 07/KT<br>Theo QĐ số 28/QĐ-VKSTC<br>ngày 15 tháng 02 năm 2023</p>
-                </tr>    
-            </table>
-            <table style="border: none; width: 100%;">
-                <tr>
-                    <td style="width: 50%; text-align: center; border: none;">
-                        <b>VIỆN KIỂM SÁT NHÂN DÂN<br>THÀNH PHỐ CẦN THƠ<br>THANH TRA - KHIẾU TỐ</b>
-                    </td>
-                    <td style="width: 50%; text-align: center; border: none;">
-                        <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
-                        <b>Độc lập - Tự do - Hạnh phúc</b>
-                    </td>
-                </tr>
-            </table>
-            <table style="border: none; width: 100%;">
-                <tr style="border: none;">
-                    <td colspan="2" style="text-align: center; border: none;">
-                        <i>Cần Thơ, ngày ${day} tháng ${month} năm ${year}</i>
-                    </td>
-                </tr>
-            </table>
+          <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Phiếu Đề Xuất</title>
+    <style>
+        /* Định nghĩa @page cho máy in/PDF */
+        @page {
+           /* Kích thước Lề theo yêu cầu:
+               Trên: 2cm, Dưới: 2cm, Trái: 3cm, Phải: 1.5cm */
+            margin-top: 2cm;
+            margin-bottom: 2cm;
+            margin-left: 3cm;
+            margin-right: 1.5cm;
+            size: A4; 
+        }
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 13pt;
+            /* Cần thiết lập margin body = 0 để @page margin hoạt động */
+            margin: 0; 
+            padding: 0;
+            line-height: 1.5;
+            color: black;
+        }
+        .page-content {
+            box-sizing: border-box;
+            width: 210mm; /* Khổ A4 rộng */
+            min-height: 297mm; /* Khổ A4 cao */
+            /* Lề màn hình: Cần tính toán lại hoặc bỏ qua, 
+               vì @page sẽ quản lý lề khi in */
+            padding-top: 2cm;
+            padding-bottom: 2cm;
+            padding-left: 3cm;
+            padding-right: 1.5cm;
+        }
+        /* Định dạng chung cho văn bản */
+        .center-text { text-align: center; }
+        .right-text { text-align: right; }
+        .bold { font-weight: bold; }
+        .underline { text-decoration: underline; }
+        
+        /* Cấu trúc Header */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13pt;
+        }
+        .header-table td {
+            padding: 2px 0;
+            vertical-align: top;
+        }
+
+        /* Phần Quốc hiệu và Tiêu ngữ */
+        .quoc-hieu-container {
+            width: 50%;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .quoc-hieu-container .title {
+            font-size: 13pt;
+        }
+        .quoc-hieu-container .subtitle {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .quoc-hieu-container .separator {
+            width: 70%;
+            border-top: 1px solid black;
+            margin: 0 auto;
+        }
+
+        /* Địa danh và ngày tháng */
+        .right-text i {
+            font-size: 13pt;
+            font-style: italic;
+        }
+
+        /* Tiêu đề chính */
+        .main-title {
+            margin: 20px 0;
+            text-align: center;
+            font-size: 14pt;
+        }
+
+        /* Chữ ký */
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+            font-size: 13pt;
+            text-align: center;
+        }
+        .signature-table td {
+            width: 33.33%; /* 3 cột */
+            padding: 10px 0;
+            vertical-align: top;
+        }
+    </style>
+</head>
+
+    <body>
+         <div class="page-content">   
+            <div style="text-align: right; font-size: 11pt; margin-top: 10px;">
+                Mẫu số <span class="subtitle">07/KT</span><br>
+                (Theo QĐ số <span class="subtitle">28/QĐ-VKSTC</span>ngày <span class="subtitle">15 tháng 02 năm 2023</span>)
+            </div>   
+    <table class="header-table">
+        <tr>
+            <td class="quoc-hieu-container">
+                <span class="subtitle">VIỆN KIỂM SÁT NHÂN DÂN</span><br>
+                <span class="subtitle">THÀNH PHỐ CẦN THƠ</span><br>
+                <span class="bold underline">THANH TRA - KHIẾU TỐ</span>
+            </td>
+            <td class="quoc-hieu-container">
+                <div class="title bold">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                <div class="title bold">Độc lập - Tự do - Hạnh phúc</div>
+                <div class="separator"></div>
+            </td>
+        </tr>
+    </table>
+    
+        <div class="right-text" style="margin-top: 5px;">
+            <i>Cần Thơ, ngày <span class="underline">${day} </span> tháng <span class="underline">${month} </span> năm ${year}</i>
+        </div>
+        <div class="main-title bold" style="font-size: 14pt;">PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</div>
+
+        <div style="margin-top: 15px; text-align: left;">
+                <span class="">Kính gửi:</span><br>
+                - Lãnh đạo Viện;<br>
+                - Lãnh đạo Thanh tra - Khiếu tố. 
+        </div>
+        <div style="margin-top: 15px; text-align: justify;">
+            <p>Tôi tên: <span class="">${don.can_bo_phan_cong || '...'}</span> , chức danh: <span class="underline bold">${don.chuc_danh || '...'}</span>;</p>
+            <p>Được phân công nghiên cứu, đề xuất xử lý đối với đơn của <span class="">${don.ho_ten || '...'}</span>, địa chỉ: <span class="underline bold">${don.dia_chi || '...'}</span>, ghi ngày <span class="underline bold">${don.ngay_ghi ? new Date(don.ngay_ghi).toLocaleDateString('vi-VN') : '...'}</span>(Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày <span class="underline bold">${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'}</span>do Bưu điện chuyển đến).</p>
+            <p>Nội dung đơn: <span class="">${don.noi_dung || '...'}</span>. </p>
+            <p>Theo quy định tại  ${canCuHtml}</p>
+            <p class="bold">Tôi xin đề xuất: <span class=""> ${don.de_xuat || '...'}</span>./.</p>
+        </div>
             
-            <h3>PHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN</h3>            
-            <p>Kính gửi:<br>- Lãnh đạo Viện;<br>- Lãnh đạo Thanh tra - Khiếu tố.</p>
-            
-            <p>Tôi tên: ${don.can_bo_phan_cong || '...'}, chức danh: ${don.chuc_danh || '...'};<br>
-            Được phân công nghiên cứu, đề xuất xử lý đối với đơn của ${don.ho_ten || '...'}, địa chỉ: ${don.dia_chi || '...'}, ghi ngày ${don.ngay_ghi ? new Date(don.ngay_ghi).toLocaleDateString('vi-VN') : '...'} (Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày ${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'} do Bưu điện chuyển đến).</p>
-            
-            <p>Nội dung đơn: ${don.noi_dung || '...'}</p>
-            
-            ${canCuHtml}
-            
-            <p>Đơn nêu trên ....</p>
-            <p>Tôi xin đề xuất: ${don.de_xuat || '...'}</p>
-            
-            <table style="width: 100%; border: none; margin-top: 30pt;">
-                <tr style="border: none;">
-                    <td style="width: 50%; text-align: center; border: none;">
-                        <b>Phê duyệt của Lãnh đạo Viện</b><br>
-                        <b>VIỆN TRƯỞNG</b><br><br><br><br>
-                        Nguyễn Thanh Liêm
-                    </td>
-                    <td style="width: 50%; text-align: center; border: none;">
-                        <b>Ngày ${day} tháng ${month} năm ${year}</b><br>
-                        <b>Lãnh đạo đơn vị đề xuất</b><br>
-                        <b>PHÓ CHÁNH THANH TRA</b><br><br><br><br>
-                        Người đề xuất<br>
-                        ${don.can_bo_phan_cong || '...'}
-                    </td>
-                </tr>
-            </table>
-        </body>
-        </html>
+        <table class="signature-table">
+        <tr>
+            <td colspan="2" class="right-text" style="text-align: right; padding-right: 5%;">
+                Ngày <span class="">${day}</span> tháng <span class="">${month}</span> năm <span class="">${year}</span> 
+            </td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="bold">Phê duyệt của Lãnh đạo Viện</td>
+            <td class="bold">Lãnh đạo đơn vị đề xuất</td>
+            <td class="bold">Người đề xuất</td>
+        </tr>
+        <tr>
+            <td class="bold" style="padding-top: 5px;">VIỆN TRƯỞNG</td>
+            <td class="bold" style="padding-top: 5px;">PHÓ CHÁNH THANH TRA</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="padding-top: 70px;">Nguyễn Thanh Liêm</td>
+            <td style="padding-top: 70px;"></td>
+            <td style="padding-top: 70px;"><span class="underline">${don.can_bo_phan_cong || '...'}</span></td>
+        </tr>
+    </table>   
+        </div>
+    </body>
+</html>
     `;
 
     const html = content;
@@ -2220,7 +2319,7 @@
             </style>
         </head>
         <body>
-            <h3>TRÍCH XUẤT KẾT QUẢ XỬ LÝ ĐƠN</h3>
+            <h3>KẾT QUẢ XỬ LÝ ĐƠN</h3>
             
             <p>Đơn của: ${don.ho_ten || '...'}</p>
             <p>Địa chỉ: ${don.dia_chi || '...'}</p>
