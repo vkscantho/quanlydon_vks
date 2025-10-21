@@ -2103,12 +2103,9 @@
         <head>
           <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Phiếu Đề Xuất</title>
+                <title>Phiếu đề xuất xử lý đơn</title>
     <style>
-        /* Định nghĩa @page cho máy in/PDF */
         @page {
-           /* Kích thước Lề theo yêu cầu:
-               Trên: 2cm, Dưới: 2cm, Trái: 3cm, Phải: 1.5cm */
             margin-top: 2cm;
             margin-bottom: 2cm;
             margin-left: 3cm;
@@ -2140,7 +2137,8 @@
         .right-text { text-align: right; }
         .bold { font-weight: bold; }
         .underline { text-decoration: underline; }
-        
+        .text-block p {margin-left: 0; text-indent: 1cm; text-align: justify;}
+    
         /* Cấu trúc Header */
         .header-table {
             width: 100%;
@@ -2205,7 +2203,8 @@
          <div class="page-content">   
             <div style="text-align: right; font-size: 11pt; margin-top: 10px;">
                 Mẫu số <span class="subtitle">07/KT</span><br>
-                (Theo QĐ số <span class="subtitle">28/QĐ-VKSTC</span>ngày <span class="subtitle">15 tháng 02 năm 2023</span>)
+                Theo QĐ số <span class="subtitle">28/QĐ-VKSTC</span><br>
+                ngày<span class="subtitle">15 tháng 02 năm 2023</span>
             </div>   
     <table class="header-table">
         <tr>
@@ -2234,7 +2233,7 @@
         </div>
         <div style="margin-top: 15px; text-align: justify;">
             <p>Tôi tên: <span class="">${don.can_bo_phan_cong || '...'}</span> , chức danh: <span class="underline bold">${don.chuc_danh || '...'}</span>;</p>
-            <p>Được phân công nghiên cứu, đề xuất xử lý đối với đơn của <span class="">${don.ho_ten || '...'}</span>, địa chỉ: <span class="underline bold">${don.dia_chi || '...'}</span>, ghi ngày <span class="underline bold">${don.ngay_ghi ? new Date(don.ngay_ghi).toLocaleDateString('vi-VN') : '...'}</span>(Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày <span class="underline bold">${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'}</span>do Bưu điện chuyển đến).</p>
+            <p>Được phân công nghiên cứu, đề xuất xử lý đối với đơn của <span class="">${don.ho_ten || '...'}</span>, địa chỉ: <span class="underline bold">${don.dia_chi || '...'}</span>, ghi ngày <span class="underline bold">${don.ngay_ghi ? new Date(don.ngay_ghi).toLocaleDateString('vi-VN') : '...'}</span>(Viện kiểm sát nhân dân thành phố Cần Thơ nhận đơn ngày <span class="">${don.ngay_nhan ? new Date(don.ngay_nhan).toLocaleDateString('vi-VN') : '...'}</span>do Bưu điện chuyển đến).</p>
             <p>Nội dung đơn: <span class="">${don.noi_dung || '...'}</span>. </p>
             <p>Theo quy định tại  ${canCuHtml}</p>
             <p class="bold">Tôi xin đề xuất: <span class=""> ${don.de_xuat || '...'}</span>./.</p>
