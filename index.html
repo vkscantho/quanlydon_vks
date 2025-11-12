@@ -477,6 +477,7 @@
         <div id="thuly-section" class="section-content" style="display: flex;">
             <div class="sidebar">
                <div id="top-right-buttons">
+                    <button id="account-btn" onclick="showAccountsModal()">Quản lý tài khoản</button>
                     <button onclick="showChangePassModal()">Đổi mật khẩu</button> 
                     <button onclick="logout()">Đăng xuất</button>
                 </div>  
@@ -1144,23 +1145,14 @@
                 'Lưu đơn',
                 'Trả đơn',
                 'Thông báo chỉ dẫn',
-                'THADS TP.CT',
-                'THADS KV1','THADS KV2','THADS KV3','THADS KV4','THADS KV5','THADS KV6','THADS KV7',
+                'THADS TP.CT','THADS KV1','THADS KV2','THADS KV3','THADS KV4','THADS KV5','THADS KV6','THADS KV7',
                 'THADS KV8','THADS KV9','THADS KV10','THADS KV11','THADS KV12','THADS KV13','THADS KV14',
-                'TAND TP.CT',
-                'TAND KV1', 'TAND KV2','TAND KV3','TAND KV4','TAND KV5','TAND KV6','TAND KV7',
+                'TAND TP.CT','TAND KV1', 'TAND KV2','TAND KV3','TAND KV4','TAND KV5','TAND KV6','TAND KV7',
                 'TAND KV8','TAND KV9','TAND KV10','TAND KV11','TAND KV12','TAND KV13','TAND KV14',
-                'CQCSĐT CA TP.CT',
-                'CQCSĐT CA KV1', 'CQCSĐT CA KV2', 'CQCSĐT CA KV3','CQCSĐT CA KV4','CQCSĐT CA KV5',
-                'CQCSĐT CA KV6','CQCSĐT CA KV7','CQCSĐT CA KV8','CQCSĐT CA KV9','CQCSĐT CA KV10',
-                'CQCSĐT CA KV11','CQCSĐT CA KV12','CQCSĐT CA KV13','CQCSĐT CA KV14',
-                'CQCSĐT CA KV khác',
-                'VKSTC',
-                'Các VKS KV khác',
-                'CQ khác'
+                'CQCSĐT CA TP.CT','CQCSĐT CA tỉnh/TP khác','CQ, Ban, Ngành khác'
             ],
             'Đơn vị': [
-                'TT-KT',
+                'TT-KT,VKSNDTPCT',
                 'VKSND KV1', 'VKSND KV2','VKSND KV3','VKSND KV4','VKSND KV5','VKSND KV6','VKSND KV7',
                 'VKSND KV8','VKSND KV9','VKSND KV10','VKSND KV11','VKSND KV12','VKSND KV13','VKSND KV14',
             ]
@@ -1169,14 +1161,13 @@
         const vanBanOptionsFinal = [
             "Luật Tố cáo 2018",
             "Luật Khiếu nại 2011",
-            "Luật TTHS 2015",
-            "Luật TTHC 2015",
-            "Luật TTDS 2015",
-            "Luật Thi hành án dân sự 2008",
+            "Bộ Luật TTHS 2015",
+            "Bộ Luật TTHC 2015",
+            "Bộ Luật TTDS 2015",
+            "Luật Thi hành án dân sự",
             "Luật Tổ chức VKSND 2014",
             "Quy chế số 222/QC-VKSTC",
-            "Quy chế/Văn bản khác",
-            "Tự điền vào văn bản"
+            "Văn bản khác/Nhập vào"
         ];
         
         // --- AUTHENTICATION & USER MANAGEMENT (Giữ nguyên) ---
@@ -1231,15 +1222,16 @@
             }
         }
         
-        function showAccountsModal() { /* (Giữ nguyên) */
-            // Logic hiển thị modal quản lý tài khoản
-            if (!currentUser || currentUser.role !== 'admin') {
-                alert('Bạn không có quyền truy cập chức năng này.');
-                return;
-            }
-            document.getElementById('accountsModal').style.display = 'flex';
-            capNhatDonViTheoVaiTro();
-        }
+       function showAccountsModal() {
+    // Logic hiển thị modal quản lý tài khoản
+    // Kiểm tra xem người dùng có vai trò admin (Quản trị viên) hoặc super_admin
+    if (!currentUser || (currentUser.role !== 'super_admin' && currentUser.role !== 'admin')) { 
+        alert('Bạn không có quyền truy cập chức năng này.');
+        return;
+    }
+    document.getElementById('accountsModal').style.display = 'flex';
+    capNhatDonViTheoVaiTro();
+}
         
         function showChangePassModal() { /* (Giữ nguyên) */
             document.getElementById('changePassModal').style.display = 'flex';
@@ -2055,17 +2047,18 @@
             }
         }
         
-        function updateAccountBtnVisibility() { /* (Giữ nguyên) */
-             // Logic ẩn/hiện nút Quản lý tài khoản
-            const accountBtn = document.getElementById('account-btn');
-            if (accountBtn && currentUser) {
-                if (currentUser.role === 'admin') {
-                    accountBtn.style.display = 'block'; 
-                } else {
-                    accountBtn.style.display = 'none';
-                }
-            }
+        function updateAccountBtnVisibility() {
+    // Logic ẩn/hiện nút Quản lý tài khoản
+    const accountBtn = document.getElementById('account-btn');
+    if (accountBtn && currentUser) {
+        // Cập nhật để hiển thị nút cho cả 'admin' và 'super_admin'
+        if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
+            accountBtn.style.display = 'block';
+        } else {
+            accountBtn.style.display = 'none';
         }
+    }
+}
         
         // --- EXPORT UTILITIES (Giữ nguyên) ---
         function exportList() { /* (Giữ nguyên) */
