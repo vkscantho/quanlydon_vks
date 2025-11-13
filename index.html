@@ -476,10 +476,8 @@
         
         <div id="thuly-section" class="section-content" style="display: flex;">
             <div class="sidebar">
-               <div id="top-left-account-btn-container">
-                    <button id="account-btn" onclick="showAccountsModal()">Quản lý tài khoản</button>
-               </div>
                 <div id="top-right-buttons">
+                     <button id="account-btn" onclick="showAccountsModal()">Quản lý tài khoản</button>
                     <button onclick="showChangePassModal()">Đổi mật khẩu</button> 
                     <button onclick="logout()">Đăng xuất</button>
                 </div>  
@@ -683,10 +681,8 @@
         
         <div id="kiemsat-section" class="section-content">
              <div class="sidebar" style="flex: 1;">
-                <div id="top-left-account-btn-container">
+                 <div id="top-right-buttons">
                     <button id="account-btn" onclick="showAccountsModal()">Quản lý tài khoản</button>
-                </div>
-                <div id="top-right-buttons">
                     <button onclick="showChangePassModal()">Đổi mật khẩu</button> 
                     <button onclick="logout()">Đăng xuất</button>
                 </div> 
@@ -754,8 +750,7 @@
 
         <div id="giaiquyet-section" class="section-content">
             <div class="main-panel" style="width: 100%; max-width: none; flex: 1;">
-                 <h2>3. Công tác giải quyết đơn thuộc thẩm quyền</h2>
-                 <p>Danh sách đơn thuộc thẩm quyền giải quyết (Được chuyển từ Công tác thụ lý đơn).</p>
+                 <h2>Danh sách đơn thuộc thẩm quyền giải quyết của Viện kiểm sát</h2>
                  <div class="btn-container" style="margin-bottom: 20px;">
                     <button onclick="exportGiaiQuyetList()">Xuất Danh sách</button>
                 </div>
@@ -768,7 +763,7 @@
                             <th>Nội dung đơn</th>
                             <th>Phân loại</th>
                             <th>Thẩm quyền</th>
-                            <th>Trạng thái GQ</th> 
+                            <th>Kết quả GQ</th> 
                             <th>Thao tác</th>
                         </tr>
                     </thead>
@@ -780,13 +775,11 @@
 
         <div id="vanban-section" class="section-content">
             <div class="sidebar" style="flex: 1;">
-                <div id="top-left-account-btn-container">
+                 <div id="top-right-buttons">
                     <button id="account-btn" onclick="showAccountsModal()">Quản lý tài khoản</button>
-               </div>
-                <div id="top-right-buttons">
                     <button onclick="showChangePassModal()">Đổi mật khẩu</button> 
                     <button onclick="logout()">Đăng xuất</button>
-                </div> 
+                </div>
                  <h2>4. Nhập thông tin Văn bản ban hành</h2>
                  <div class="form-section full-width">
                      <div class="form-group">
