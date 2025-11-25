@@ -686,7 +686,7 @@
                     <button onclick="showChangePassModal()">Đổi mật khẩu</button> 
                     <button onclick="logout()">Đăng xuất</button>
                 </div> 
-                 <h2>2. Nhập thông tin Kiểm sát hoạt động tư pháp</h2>
+                 <h2>Nhập thông tin Kiểm sát hoạt động tư pháp</h2>
                  <div class="form-sub-group full-width">
                      <label>Mục 1: Quyết định trực tiếp kiểm sát</label>
                      <div class="form-section full-width">
@@ -780,7 +780,7 @@
                     <button onclick="showChangePassModal()">Đổi mật khẩu</button> 
                     <button onclick="logout()">Đăng xuất</button>
                 </div>
-                 <h2>4. Nhập thông tin Văn bản ban hành</h2>
+                 <h2>Nhập thông tin Văn bản ban hành</h2>
                  <div class="form-section full-width">
                      <div class="form-group">
                          <label for="vb_loai_van_ban">Loại văn bản:</label>
@@ -865,15 +865,15 @@
             
             <div class="form-section">
                 <div class="form-group">
-                    <label for="report-month">Tháng/Năm báo cáo:</label>
+                    <label for="report-month">Thời điểm lấy số liệu</label>
                     <input type="month" id="report-month" value="${new Date().toISOString().slice(0, 7)}">
                 </div>
                  <div class="form-group">
                     <label for="report-level">Cấp báo cáo:</label>
                     <select id="report-level">
-                        <option value="all">Tất cả (Thành phố & Khu vực)</option>
-                        <option value="TP">Cấp Thành phố (TT-KT)</option>
-                        <option value="KV">Cấp Khu vực (VKSND KV)</option>
+                        <option value="all">Số liệu 02 cấp</option>
+                        <option value="TP">Cấp Thành phố</option>
+                        <option value="KV">Cấp Khu vực</option>
                     </select>
                 </div>
             </div>
@@ -881,7 +881,7 @@
             <p style="margin-top: 20px;">* Báo cáo sẽ tổng hợp dữ liệu đơn theo tiêu chí đã chọn.</p>
             
             <div class="btn-container modal-footer">
-                <button onclick="exportReport()">Tạo & Tải Báo cáo</button>
+                <button onclick="exportReport()">Xuất Báo cáo</button>
             </div>
         </div>
     </div>
