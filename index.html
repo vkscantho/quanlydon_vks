@@ -10,7 +10,7 @@
                  connect-src 'self' https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebaseio.com wss://*.firebasedatabase.app https://*.jsdelivr.net;
                  img-src 'self' data: https://vienkiemsat.cantho.gov.vn https://upload.wikimedia.org blob:;">
 
-    <title>Hệ thống Quản Lý công tác khiếu tố và Kiểm sát hoạt động tư pháp</title>
+    <title>Hệ thống Quản Lý Đơn Khiếu nại - Tố Cáo</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -460,7 +460,7 @@
         <button onclick="login()">Đăng Nhập</button>
         <p><a href="#" onclick="handleForgotPassword()">Quên mật khẩu?</a></p>
      <div class="footer-login">
-          VKSND TP.Cần Thơ ®2025
+          <p>Cần Thơ ®2025</p>
         </div>
     </div>
             
@@ -1174,8 +1174,7 @@
             'Chuyển đến': [
                 'Lưu đơn',
                 'Trả đơn',
-                'Thông báo chỉ dẫn', 
-                'Phòng 1', 'Phòng 2", 'Phòng 7', 'Phòng 8', 'Phòng 9', 'Phòng 10', 'Phòng 11', ' Phòng 15',
+                'Thông báo chỉ dẫn',
                 'THADS TP.CT','THADS KV1','THADS KV2','THADS KV3','THADS KV4','THADS KV5','THADS KV6','THADS KV7',
                 'THADS KV8','THADS KV9','THADS KV10','THADS KV11','THADS KV12','THADS KV13','THADS KV14',
                 'TAND TP.CT','TAND KV1', 'TAND KV2','TAND KV3','TAND KV4','TAND KV5','TAND KV6','TAND KV7',
@@ -1183,7 +1182,7 @@
                 'CQCSĐT CA TP.CT','CQCSĐT CA tỉnh/TP khác','CQ, Ban, Ngành khác'
             ],
             'Đơn vị': [
-                'TT-KT', 'Phòng 1', 'Phòng 2", 'Phòng 7', 'Phòng 8', 'Phòng 9', 'Phòng 10', 'Phòng 11', ' Phòng 15',
+                'TT-KT,VKSNDTPCT',
                 'VKSND KV1', 'VKSND KV2','VKSND KV3','VKSND KV4','VKSND KV5','VKSND KV6','VKSND KV7',
                 'VKSND KV8','VKSND KV9','VKSND KV10','VKSND KV11','VKSND KV12','VKSND KV13','VKSND KV14',
             ]
@@ -2801,7 +2800,7 @@
         
         // Gọi hàm khởi tạo khi trang tải xong
         document.addEventListener('DOMContentLoaded', init);
-    function handleImport(event) {
+     function handleImport(event) {
     const file = event.target.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
