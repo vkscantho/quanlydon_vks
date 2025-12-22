@@ -2807,27 +2807,41 @@
     const reader = new FileReader();
     reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
+        // Thêm cấu hình cellDates: true để thư viện hỗ trợ đọc ngày tháng
+        const workbook = XLSX.read(data, {type: 'array', cellDates: true});
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
         if (confirm(`Bạn có muốn nhập ${jsonData.length} dòng dữ liệu này vào hệ thống không?`)) {
             jsonData.forEach(item => {
-                // Lưu vào database (Firebase)
+                // Hàm định dạng ngày tháng (xử lý cả trường hợp số sê-ri Excel)
+                const formatDate = (val) => {
+                    if (!val) return "";
+                    let date = new Date(val);
+                    // Kiểm tra nếu ngày tháng không hợp lệ (lỗi số sê-ri)
+                    if (isNaN(date.getTime())) return val; 
+                    
+                    let day = ("0" + date.getDate()).slice(-2);
+                    let month = ("0" + (date.getMonth() + 1)).slice(-2);
+                    let year = date.getFullYear();
+                    return `${day}/${month}/${year}`;
+                };
+
+                // Đẩy dữ liệu lên Firebase
                 firebase.database().ref('dons').push({
-                    ngay_nhan: item["Ngày nhận đơn"] || "",
+                    ngay_nhan: formatDate(item["Ngày nhận đơn"]),
                     ho_ten: item["Họ tên /CQ/ TC"] || "",
                     dia_chi: item["Địa chỉ"] || "",
                     phan_loai: item["Phân loại"] || "",
                     noi_dung: item["Nội dung đơn"] || "",
-                    nguon_don: "Bưu điện", // Mặc định theo file Word của bạn
-                    ngay_ghi: item["Ngày đơn"] || "",
+                    nguon_don: "Bưu điện",
+                    ngay_ghi: formatDate(item["Ngày đơn"]),
                     can_bo_phan_cong: "Nguyễn Hoàng Thiên Phúc",
                     timestamp: Date.now()
                 });
             });
-            alert("Đã nhập dữ liệu thành công!");
-            location.reload(); // Tải lại trang để thấy dữ liệu mới
+            alert("Đã nhập dữ liệu thành công với định dạng ngày chuẩn!");
+            location.reload();
         }
     };
     reader.readAsArrayBuffer(file);
