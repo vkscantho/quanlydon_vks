@@ -469,9 +469,11 @@
             <button id="menu-btn-thuly" class="active" onclick="showSection('thuly')">Thụ lý đơn</button>
             <button id="menu-btn-giaiquyet" onclick="showSection('giaiquyet')">Đơn thuộc thẩm quyền giải quyết</button>
             <button id="menu-btn-kiemsat" onclick="showSection('kiemsat')">Kiểm sát hoạt động tư pháp</button>
-            <button id="menu-btn-vanban" onclick="showSection('vanban')">Kiến nghị, Kháng nghị và các văn bản khác</button>
+            <button id="menu-btn-vanban" onclick="showSection('vanban')">Ban hành văn bản</button>
             <button onclick="showReportModal()">Báo cáo Thống kê</button>
             <button onclick="downloadJSON()">Sao lưu JSON</button>
+            <button onclick="document.getElementById('import-excel').click()">Nhập từ Excel</button>
+<input type="file" id="import-excel" style="display:none" onchange="handleImport(event)">
         </nav>
         
         <div id="thuly-section" class="section-content" style="display: flex;">
@@ -2798,6 +2800,36 @@
         
         // Gọi hàm khởi tạo khi trang tải xong
         document.addEventListener('DOMContentLoaded', init);
+    function handleImport(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+        if (confirm(`Bạn có muốn nhập ${jsonData.length} dòng dữ liệu này vào hệ thống không?`)) {
+            jsonData.forEach(item => {
+                // Lưu vào database (Firebase)
+                firebase.database().ref('dons').push({
+                    ngay_nhan: item["Ngày nhận đơn"] || "",
+                    ho_ten: item["Họ tên /CQ/ TC"] || "",
+                    dia_chi: item["Địa chỉ"] || "",
+                    phan_loai: item["Phân loại"] || "",
+                    noi_dung: item["Nội dung đơn"] || "",
+                    nguon_don: "Bưu điện", // Mặc định theo file Word của bạn
+                    ngay_ghi: item["Ngày đơn"] || "",
+                    can_bo_phan_cong: "",
+                    timestamp: Date.now()
+                });
+            });
+            alert("Đã nhập dữ liệu thành công!");
+            location.reload(); // Tải lại trang để thấy dữ liệu mới
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
     </script>
 </body>
 </html>
