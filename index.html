@@ -1141,16 +1141,7 @@
     </div>
 
     <script>
-        function formatVietnameseDate(dateStr) {
-    if (!dateStr || dateStr === "") return "";
-    // Nếu dateStr có dạng 2025-10-22
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-    return dateStr; // Trả về nguyên bản nếu không đúng định dạng
-}
-        const firebaseConfig = {
+       const firebaseConfig = {
             apiKey: "AIzaSyBvhrOBoJc9-gKuTAXDlPknVdxKecgPH_g",
             authDomain: "quanlydonvks-d7ff9.firebaseapp.com",
             databaseURL: "https://quanlydonvks-d7ff9-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -1174,13 +1165,12 @@
             'Nguồn đơn': [
                 'Bưu điện',
                 'Tiếp công dân',
-                'Các cơ quan Đảng, Nhà nước',
+                'Cơ quan Đảng',
                 'UBND TPCT',
                 'Cục Điều tra, VKSTC',
-                'V11, VKSTC',
                 'V12, VKSTC',
-                'Các Sở, Ban, Ngành',
-                'Thành ủy'
+                'Sở, Ban, Ngành',
+                'Thành ủy Cần Thơ'
             ],
             'Chuyển đến': [
                 'Lưu đơn',
