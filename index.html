@@ -1174,7 +1174,7 @@
             'Chuyển đến': [
                 'Lưu đơn',
                 'Trả đơn',
-                'Thông báo chỉ dẫn',
+                'Thông báo chỉ dẫn', 'Phòng 1', 'Phòng 2", 'Phòng 7', 'Phòng 8', 'Phòng 9', 'Phòng 10', 'Phòng 11', ' Phòng 15',
                 'THADS TP.CT','THADS KV1','THADS KV2','THADS KV3','THADS KV4','THADS KV5','THADS KV6','THADS KV7',
                 'THADS KV8','THADS KV9','THADS KV10','THADS KV11','THADS KV12','THADS KV13','THADS KV14',
                 'TAND TP.CT','TAND KV1', 'TAND KV2','TAND KV3','TAND KV4','TAND KV5','TAND KV6','TAND KV7',
@@ -2831,8 +2831,8 @@
                     dia_chi: item["Địa chỉ"] || "",
                     phan_loai: item["Phân loại"] || "",
                     noi_dung: item["Nội dung đơn"] || "",
-                    nguon_don: "",
-                    ngay_ghi: item["Ngày đơn"] || "",
+                    nguon_don: item["Nguồn đơn"] || "",
+                    ngay_ghi: item["Đơn nghi ngày"] || "",
                     can_bo_phan_cong: item["Cán bộ xử lý"] || "",
                     timestamp: Date.now()
                 });
