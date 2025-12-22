@@ -13,7 +13,7 @@
     <title>Hệ thống Quản Lý Đơn Khiếu nại - Tố Cáo</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    < src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -1141,6 +1141,15 @@
     </div>
 
     <script>
+        function formatVietnameseDate(dateStr) {
+    if (!dateStr || dateStr === "") return "";
+    // Nếu dateStr có dạng 2025-10-22
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr; // Trả về nguyên bản nếu không đúng định dạng
+}
         const firebaseConfig = {
             apiKey: "AIzaSyBvhrOBoJc9-gKuTAXDlPknVdxKecgPH_g",
             authDomain: "quanlydonvks-d7ff9.firebaseapp.com",
